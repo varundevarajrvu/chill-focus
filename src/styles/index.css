@@ -45,12 +45,28 @@
  * minimal/high-contrast. Applied via `filter` on the stage wrapper so it
  * reads as a chrome-wide shift rather than a per-component recolor.
  */
+/*
+ * Focus motion language: no springs, ease-out only, slower at higher levels.
+ * The filter shift itself was previously an instant jump (only
+ * background/border/color/fill/stroke transitioned) — giving it its own
+ * transition-property + a per-level duration (mirrors LEVELS[level].motionScale:
+ * L2 = 1.5x, L3 = 2x the L1 base) makes the level change read as "slower",
+ * matching the levels table's "Transition motion" row.
+ */
+.mode-stage {
+  transition-property: background-color, border-color, color, fill, stroke, filter;
+  transition-duration: 400ms;
+  transition-timing-function: ease-out;
+}
+
 [data-level="2"] .mode-stage {
   filter: saturate(0.55);
+  transition-duration: 550ms;
 }
 
 [data-level="3"] .mode-stage {
   filter: saturate(0.15) contrast(1.15);
+  transition-duration: 700ms;
 }
 
 body,
@@ -63,6 +79,12 @@ body * {
 @media (prefers-reduced-motion: reduce) {
   body,
   body * {
+    transition-duration: 0ms;
+  }
+
+  .mode-stage,
+  [data-level="2"] .mode-stage,
+  [data-level="3"] .mode-stage {
     transition-duration: 0ms;
   }
 }

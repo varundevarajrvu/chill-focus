@@ -1,5 +1,7 @@
+import { motion } from 'framer-motion'
 import { useMusicStore } from '../../stores/musicStore'
 import { PLAYLIST } from './playlist'
+import { chillHover, chillSpring, chillTap } from '../../lib/motion'
 // Side-effect import: activates the module-level music manager's store
 // subscription. Importing this panel is enough to wire up playback — no
 // separate import needed elsewhere, matching the "self-contained" ask.
@@ -36,31 +38,40 @@ export function MusicPlayer() {
       </div>
 
       <div className="flex items-center justify-center gap-3">
-        <button
+        <motion.button
           type="button"
           onClick={prev}
           aria-label="Previous track"
+          whileHover={chillHover}
+          whileTap={chillTap}
+          transition={chillSpring}
           className="rounded-full border border-ink-muted/20 px-3 py-1.5 text-sm font-medium text-ink-muted outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
         >
           ⏮
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           type="button"
           onClick={() => (playing ? pause() : play())}
           aria-pressed={playing}
           aria-label={playing ? 'Pause' : 'Play'}
+          whileHover={chillHover}
+          whileTap={chillTap}
+          transition={chillSpring}
           className="rounded-full bg-accent px-5 py-1.5 text-sm font-medium text-white outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
         >
           {playing ? 'Pause' : 'Play'}
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           type="button"
           onClick={next}
           aria-label="Next track"
+          whileHover={chillHover}
+          whileTap={chillTap}
+          transition={chillSpring}
           className="rounded-full border border-ink-muted/20 px-3 py-1.5 text-sm font-medium text-ink-muted outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
         >
           ⏭
-        </button>
+        </motion.button>
       </div>
 
       <label className="flex items-center gap-3 text-sm text-ink-muted">
@@ -82,19 +93,22 @@ export function MusicPlayer() {
           const active = index === trackIndex
           return (
             <li key={track.id}>
-              <button
+              <motion.button
                 type="button"
                 role="option"
                 aria-selected={active}
                 aria-pressed={active}
                 onClick={() => selectTrack(index)}
+                whileHover={{ scale: 1.015 }}
+                whileTap={chillTap}
+                transition={chillSpring}
                 className={`flex w-full flex-col items-start gap-0.5 rounded-xl px-3 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
                   active ? 'bg-accent text-white' : 'border border-ink-muted/20 text-ink-muted hover:text-ink'
                 }`}
               >
                 <span className="text-sm font-medium">{track.title}</span>
                 <span className={`text-xs ${active ? 'text-white/80' : 'text-ink-muted/70'}`}>{track.artist}</span>
-              </button>
+              </motion.button>
             </li>
           )
         })}
