@@ -11,11 +11,16 @@ import { DurationEditor } from './DurationEditor'
 export function TimerPanel() {
   const { message, dismiss } = useNudge()
   const level = useTimerStore((s) => s.level)
+  const status = useTimerStore((s) => s.status)
   const motionScale = LEVELS[level].motionScale
   // MotionConfig's global net (App.tsx) doesn't zero out opacity tweens, so
   // this fade needs its own reduced-motion guard too.
   const reduceMotion = useReducedMotion()
   const nudgeTransition = reduceMotion ? { duration: 0 } : focusFade(motionScale)
+  // L3 "everything non-essential gone": the selector and duration editor
+  // disappear while an L3 session is running. Hiding them at idle L3 too
+  // would trap the user at Level 3 with no way back.
+  const hideNonEssential = level === 3 && status === 'running'
 
   return (
     <section
@@ -24,7 +29,7 @@ export function TimerPanel() {
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-ink">Timer</h2>
-        <LevelSelector />
+        {!hideNonEssential && <LevelSelector />}
       </div>
 
       <AnimatePresence>
@@ -44,7 +49,7 @@ export function TimerPanel() {
 
       <TimerDisplay />
       <TimerControls />
-      <DurationEditor />
+      {!hideNonEssential && <DurationEditor />}
     </section>
   )
 }
