@@ -27,9 +27,11 @@ A two-mode personal site: **Chill mode** (music + mini-games, low stakes, dopami
 
 ## 3. Feasibility Flags (read before building anything)
 
+**Zero-cost constraint (Chief's explicit call):** every dependency, service, and hosting tier in this build must be free with no paid tier required, ever. This is a hard constraint, not a preference — if a subagent hits a choice with a paid-only path, it stops and flags it rather than picking it.
+
 Two places where the ask, taken literally, runs into a wall:
 
-1. **"Pop music"** — actual copyrighted commercial tracks can't be bundled into a repo that gets deployed publicly; that's a takedown risk, not a coding problem. Default: royalty-free/CC-licensed upbeat tracks (Pixabay Music, YouTube Audio Library) bundled as static files for v1. A Spotify Web Playback SDK embed is a real option for actual pop hits, but it needs Spotify auth and Premium — treat as a v2 stretch goal, not part of the MVP.
+1. **"Pop music"** — actual copyrighted commercial tracks can't be bundled into a repo that gets deployed publicly; that's a takedown risk, not a coding problem. Default and *only* option given the zero-cost constraint: royalty-free/CC-licensed upbeat tracks (Pixabay Music, YouTube Audio Library) bundled as static files. The Spotify Web Playback SDK is explicitly **out of scope** — it needs a Spotify Premium subscription to play full tracks, which violates the zero-cost constraint. Do not build toward it.
 2. **"Distraction-blocking" Focus Level 3** — a website cannot block other tabs, apps, or sites. No browser permission model allows it. Level 3 below is built as *friction*, not enforcement (hidden panels, confirmation nags). If Chief wants real site-blocking later, that's a browser extension — a separate project, not this one.
 
 Both are logged here so nobody discovers them mid-build and quietly reinterprets scope without saying so.
@@ -45,7 +47,7 @@ Both are logged here so nobody discovers them mid-build and quietly reinterprets
 - **Howler.js** — audio (looping, crossfade, multi-track easier than raw `<audio>`).
 - **canvas-confetti** — appreciation animation base.
 - **localStorage** — all persistence. No backend, no auth, no database for v1. This is a single-device personal tool and a portfolio piece, not a SaaS — a backend is added scope with no payoff right now. Reversible later if he wants sync.
-- **Deploy:** Vercel, free tier, static build. Deploy on Day 1 with a blank shell — don't wait for "done" to ship the pipeline.
+- **Deploy:** Vercel, Hobby (free) tier, static build. Deploy on Day 1 with a blank shell — don't wait for "done" to ship the pipeline. Stay on the default `*.vercel.app` subdomain — it's $0. A custom domain is the one optional real cost in this whole project (~$10–15/yr to a registrar), and it's Chief's call, not a build requirement.
 
 ---
 
