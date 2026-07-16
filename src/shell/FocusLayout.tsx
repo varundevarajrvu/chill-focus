@@ -3,8 +3,10 @@ import { useTimerStore } from '../stores/timerStore'
 import { LEVELS } from '../features/timer/levels'
 import { TimerPanel } from '../features/timer/TimerPanel'
 import { AmbientPanel } from '../features/audio/AmbientPanel'
+import { NotesPanel } from '../features/notes/NotesPanel'
+import { TodoList } from '../features/todo/TodoList'
 
-function NotesPlaceholder() {
+function NotesAndTodo() {
   const level = useTimerStore((s) => s.level)
   const visibility = LEVELS[level].notesPanel
 
@@ -45,14 +47,11 @@ function NotesPlaceholder() {
   }
 
   return (
-    <section className="flex min-h-48 flex-col justify-between rounded-2xl border border-dashed border-accent/40 bg-surface p-6">
-      <div>
-        <h2 className="text-base font-semibold text-ink">Notes &amp; to-do</h2>
-        <p className="mt-1 text-sm text-ink-muted">
-          Scratchpad and a small to-do list will live here.
-        </p>
-      </div>
-      <p className="text-xs text-ink-muted/70">Not wired up yet.</p>
+    <section className="flex min-h-48 flex-col gap-6 rounded-2xl border border-accent/30 bg-surface p-6">
+      <h2 className="text-base font-semibold text-ink">Notes &amp; to-do</h2>
+      <NotesPanel />
+      <hr className="border-t border-ink-muted/15" />
+      <TodoList />
     </section>
   )
 }
@@ -64,7 +63,7 @@ export function FocusLayout() {
         <TimerPanel />
         <AmbientPanel />
       </div>
-      <NotesPlaceholder />
+      <NotesAndTodo />
     </div>
   )
 }
