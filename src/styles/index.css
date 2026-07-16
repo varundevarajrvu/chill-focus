@@ -36,6 +36,23 @@
   color-scheme: light;
 }
 
+/*
+ * Focus-level chrome (Section 5.2 table). `data-level` is only ever set on
+ * <html> while mode === 'focus' (see AppShell), so these selectors don't
+ * need an extra [data-mode="focus"] scope — chill mode never carries the
+ * attribute and stays visually untouched.
+ * L1 = full color (no override needed). L2 = slightly desaturated. L3 =
+ * minimal/high-contrast. Applied via `filter` on the stage wrapper so it
+ * reads as a chrome-wide shift rather than a per-component recolor.
+ */
+[data-level="2"] .mode-stage {
+  filter: saturate(0.55);
+}
+
+[data-level="3"] .mode-stage {
+  filter: saturate(0.15) contrast(1.15);
+}
+
 body,
 body * {
   transition-property: background-color, border-color, color, fill, stroke;

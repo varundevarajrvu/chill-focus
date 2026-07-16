@@ -8,7 +8,7 @@ export function ModeStage() {
   const reduceMotion = useReducedMotion()
 
   return (
-    <div className="relative">
+    <div className="relative mode-stage">
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={mode}
