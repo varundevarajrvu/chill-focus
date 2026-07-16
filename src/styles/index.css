@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+/*
+ * Mode tokens — components should only ever reach for `bg-accent`,
+ * `text-accent`, `bg-surface`, `text-ink-muted` etc. Never hardcode
+ * per-mode colors in a component; add a token here instead.
+ */
+:root,
+[data-mode="chill"] {
+  --accent: oklch(0.72 0.15 55); /* warm */
+  --accent-soft: oklch(0.92 0.05 55);
+  --surface: oklch(0.99 0.004 80);
+  --ink: oklch(0.32 0.02 80);
+  --ink-muted: oklch(0.52 0.02 80);
+}
+
+[data-mode="focus"] {
+  --accent: oklch(0.62 0.08 235); /* cool */
+  --accent-soft: oklch(0.9 0.03 235);
+  --surface: oklch(0.98 0.004 235);
+  --ink: oklch(0.3 0.015 235);
+  --ink-muted: oklch(0.5 0.015 235);
+}
+
+@theme {
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Mode switch reads as a subtle shift, not a theme swap. */
+:root {
+  color-scheme: light;
+}
+
+body,
+body * {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 400ms;
+  transition-timing-function: ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  body * {
+    transition-duration: 0ms;
+  }
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  color: var(--color-ink-muted);
+  background-color: #faf9f4;
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      rgba(60, 50, 40, 0.05) 0,
+      rgba(60, 50, 40, 0.05) 1px,
+      transparent 1px,
+      transparent 32px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(60, 50, 40, 0.05) 0,
+      rgba(60, 50, 40, 0.05) 1px,
+      transparent 1px,
+      transparent 32px
+    );
+  background-attachment: fixed;
+}
