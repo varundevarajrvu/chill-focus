@@ -23,7 +23,7 @@ export function TimerDisplay() {
         {mm}:{ss.toString().padStart(2, '0')}
       </p>
       <p className="text-xs text-ink-muted/70">
-        {completedSessions} session{completedSessions === 1 ? '' : 's'} today
+        {completedSessions} session{completedSessions === 1 ? '' : 's'} banked
       </p>
     </div>
   )

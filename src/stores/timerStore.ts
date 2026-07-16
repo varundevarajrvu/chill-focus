@@ -48,88 +48,15 @@ interface TimerState {
 
 export const useTimerStore = create<TimerState>()(
   persist(
-    (set, get) => ({
-      phase: 'idle',
-      status: 'paused',
-      endAt: null,
-      remainingMs: LEVELS[DEFAULT_LEVEL].focusMin * 60_000,
-      completedSessions: 0,
-      lastCompletionAt: null,
-      lastCompletedPhase: null,
-      level: DEFAULT_LEVEL,
-      customDurations: {},
-
-      setLevel: (level) => {
+    (set, get) => {
+      // Shared by tick() and pause() — both need to route "time's actually
+      // up" through the exact same completion transition, so that pausing
+      // in the gap right at expiry behaves identically to the interval tick
+      // catching it (see carry-over fix: pause() used to just clamp
+      // remainingMs to 0, which made the next start() restart a full block
+      // instead of completing).
+      const completeCurrentPhase = () => {
         const s = get()
-        // Level switching is disabled while a session is running.
-        if (s.status === 'running') return
-        const durations = effectiveDurations(level, s.customDurations)
-        set({
-          level,
-          phase: 'idle',
-          status: 'paused',
-          endAt: null,
-          remainingMs: durations.focusMin * 60_000,
-        })
-      },
-
-      setCustomDuration: (level, kind, minutes) => {
-        const s = get()
-        if (s.status === 'running') return
-        const current = s.customDurations[level] ?? effectiveDurations(level, s.customDurations)
-        const updated = { ...current, [kind]: clampMinutes(minutes) }
-        const nextCustom = { ...s.customDurations, [level]: updated }
-        const patch: Partial<TimerState> = { customDurations: nextCustom }
-
-        // If we're editing the duration that governs the currently-armed
-        // phase for the currently-selected level, refresh remainingMs too.
-        const relevantKind = s.phase === 'break' ? 'breakMin' : 'focusMin'
-        if (s.level === level && kind === relevantKind) {
-          patch.remainingMs = updated[relevantKind] * 60_000
-        }
-        set(patch)
-      },
-
-      start: () => {
-        const s = get()
-        if (s.status === 'running') return
-        const durations = effectiveDurations(s.level, s.customDurations)
-        const remaining = s.remainingMs > 0 ? s.remainingMs : durations.focusMin * 60_000
-        set({
-          phase: s.phase === 'idle' ? 'focus' : s.phase,
-          status: 'running',
-          endAt: Date.now() + remaining,
-          remainingMs: remaining,
-        })
-      },
-
-      pause: () => {
-        const s = get()
-        if (s.status !== 'running' || s.endAt === null) return
-        const remaining = Math.max(0, s.endAt - Date.now())
-        set({ status: 'paused', remainingMs: remaining, endAt: null })
-      },
-
-      reset: () => {
-        const s = get()
-        const durations = effectiveDurations(s.level, s.customDurations)
-        set({
-          phase: 'idle',
-          status: 'paused',
-          endAt: null,
-          remainingMs: durations.focusMin * 60_000,
-        })
-      },
-
-      tick: () => {
-        const s = get()
-        if (s.status !== 'running' || s.endAt === null) return
-        const remaining = s.endAt - Date.now()
-        if (remaining > 0) {
-          set({ remainingMs: remaining })
-          return
-        }
-
         const now = Date.now()
         const durations = effectiveDurations(s.level, s.customDurations)
         if (s.phase === 'focus') {
@@ -154,8 +81,101 @@ export const useTimerStore = create<TimerState>()(
             lastCompletedPhase: 'break',
           })
         }
-      },
-    }),
+      }
+
+      return {
+        phase: 'idle',
+        status: 'paused',
+        endAt: null,
+        remainingMs: LEVELS[DEFAULT_LEVEL].focusMin * 60_000,
+        completedSessions: 0,
+        lastCompletionAt: null,
+        lastCompletedPhase: null,
+        level: DEFAULT_LEVEL,
+        customDurations: {},
+
+        setLevel: (level) => {
+          const s = get()
+          // Level switching is disabled while a session is running.
+          if (s.status === 'running') return
+          const durations = effectiveDurations(level, s.customDurations)
+          set({
+            level,
+            phase: 'idle',
+            status: 'paused',
+            endAt: null,
+            remainingMs: durations.focusMin * 60_000,
+          })
+        },
+
+        setCustomDuration: (level, kind, minutes) => {
+          const s = get()
+          if (s.status === 'running') return
+          const current = s.customDurations[level] ?? effectiveDurations(level, s.customDurations)
+          const updated = { ...current, [kind]: clampMinutes(minutes) }
+          const nextCustom = { ...s.customDurations, [level]: updated }
+          const patch: Partial<TimerState> = { customDurations: nextCustom }
+
+          // If we're editing the duration that governs the currently-armed
+          // phase for the currently-selected level, refresh remainingMs too.
+          const relevantKind = s.phase === 'break' ? 'breakMin' : 'focusMin'
+          if (s.level === level && kind === relevantKind) {
+            patch.remainingMs = updated[relevantKind] * 60_000
+          }
+          set(patch)
+        },
+
+        start: () => {
+          const s = get()
+          if (s.status === 'running') return
+          const durations = effectiveDurations(s.level, s.customDurations)
+          const remaining = s.remainingMs > 0 ? s.remainingMs : durations.focusMin * 60_000
+          set({
+            phase: s.phase === 'idle' ? 'focus' : s.phase,
+            status: 'running',
+            endAt: Date.now() + remaining,
+            remainingMs: remaining,
+          })
+        },
+
+        pause: () => {
+          const s = get()
+          if (s.status !== 'running' || s.endAt === null) return
+          const remaining = s.endAt - Date.now()
+          // Paused right at/after expiry: this IS a completion, not a pause
+          // with 0ms left — route it through the same transition tick() uses,
+          // so the next start() arms the next phase instead of restarting a
+          // full block from a stale remainingMs=0.
+          if (remaining <= 0) {
+            completeCurrentPhase()
+            return
+          }
+          set({ status: 'paused', remainingMs: remaining, endAt: null })
+        },
+
+        reset: () => {
+          const s = get()
+          const durations = effectiveDurations(s.level, s.customDurations)
+          set({
+            phase: 'idle',
+            status: 'paused',
+            endAt: null,
+            remainingMs: durations.focusMin * 60_000,
+          })
+        },
+
+        tick: () => {
+          const s = get()
+          if (s.status !== 'running' || s.endAt === null) return
+          const remaining = s.endAt - Date.now()
+          if (remaining > 0) {
+            set({ remainingMs: remaining })
+            return
+          }
+          completeCurrentPhase()
+        },
+      }
+    },
     {
       name: 'cf-timer',
       // A running session does NOT survive reload — only level + custom

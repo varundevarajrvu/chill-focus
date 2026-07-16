@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useModeStore } from '../stores/modeStore'
 import { useTimerStore } from '../stores/timerStore'
 import { useTabTitle } from '../hooks/useTabTitle'
+import { AppreciationOverlay } from '../features/appreciation/AppreciationOverlay'
 import { ModeHeader } from './ModeHeader'
 import { ModeStage } from './ModeStage'
 
@@ -31,6 +32,7 @@ export function AppShell() {
       <main className="flex-1 px-6 pb-10 sm:px-10">
         <ModeStage />
       </main>
+      <AppreciationOverlay />
     </div>
   )
 }
