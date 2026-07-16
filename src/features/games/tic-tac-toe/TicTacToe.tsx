@@ -89,7 +89,7 @@ export function TicTacToe() {
                 setBoard(EMPTY_BOARD)
               }}
               className={`rounded-full px-3 py-1.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
-                active ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink'
+                active ? 'bg-accent text-accent-ink' : 'text-ink-muted hover:text-ink'
               }`}
             >
               {option.label}
@@ -128,7 +128,7 @@ export function TicTacToe() {
       <button
         type="button"
         onClick={newGame}
-        className="rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-white outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+        className="rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
       >
         New game
       </button>

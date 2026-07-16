@@ -18,11 +18,11 @@ export function TimerDisplay() {
 
   return (
     <div className="flex flex-col items-center gap-1 py-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-ink-muted/70">{PHASE_LABEL[phase]}</p>
+      <p className="text-xs uppercase tracking-[0.2em] text-ink-muted">{PHASE_LABEL[phase]}</p>
       <p className="font-mono text-5xl font-semibold tabular-nums text-ink" aria-live="off">
         {mm}:{ss.toString().padStart(2, '0')}
       </p>
-      <p className="text-xs text-ink-muted/70">
+      <p className="text-xs text-ink-muted">
         {completedSessions} session{completedSessions === 1 ? '' : 's'} banked
       </p>
     </div>

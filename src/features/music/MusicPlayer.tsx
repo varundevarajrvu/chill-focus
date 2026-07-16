@@ -33,7 +33,7 @@ export function MusicPlayer() {
       <div>
         <h2 className="text-base font-semibold text-ink">Music player</h2>
         <p className="mt-1 truncate text-sm text-ink-muted" title={`${current.title} — ${current.artist}`}>
-          {current.title} <span className="text-ink-muted/70">— {current.artist}</span>
+          {current.title} <span className="text-ink-muted">— {current.artist}</span>
         </p>
       </div>
 
@@ -57,7 +57,7 @@ export function MusicPlayer() {
           whileHover={chillHover}
           whileTap={chillTap}
           transition={chillSpring}
-          className="rounded-full bg-accent px-5 py-1.5 text-sm font-medium text-white outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+          className="rounded-full bg-accent px-5 py-1.5 text-sm font-medium text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
         >
           {playing ? 'Pause' : 'Play'}
         </motion.button>
@@ -88,26 +88,24 @@ export function MusicPlayer() {
         />
       </label>
 
-      <ul role="listbox" aria-label="Playlist" className="flex flex-col gap-1">
+      <ul aria-label="Playlist" className="flex flex-col gap-1">
         {PLAYLIST.map((track, index) => {
           const active = index === trackIndex
           return (
             <li key={track.id}>
               <motion.button
                 type="button"
-                role="option"
-                aria-selected={active}
                 aria-pressed={active}
                 onClick={() => selectTrack(index)}
                 whileHover={{ scale: 1.015 }}
                 whileTap={chillTap}
                 transition={chillSpring}
                 className={`flex w-full flex-col items-start gap-0.5 rounded-xl px-3 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
-                  active ? 'bg-accent text-white' : 'border border-ink-muted/20 text-ink-muted hover:text-ink'
+                  active ? 'bg-accent text-accent-ink' : 'border border-ink-muted/20 text-ink-muted hover:text-ink'
                 }`}
               >
                 <span className="text-sm font-medium">{track.title}</span>
-                <span className={`text-xs ${active ? 'text-white/80' : 'text-ink-muted/70'}`}>{track.artist}</span>
+                <span className={`text-xs ${active ? 'text-accent-ink' : 'text-ink-muted'}`}>{track.artist}</span>
               </motion.button>
             </li>
           )

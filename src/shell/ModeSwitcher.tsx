@@ -32,7 +32,7 @@ export function ModeSwitcher() {
             whileTap={tap}
             transition={transition}
             className={`rounded-full px-4 py-1.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
-              active ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink'
+              active ? 'bg-accent text-accent-ink' : 'text-ink-muted hover:text-ink'
             }`}
           >
             {option.label}

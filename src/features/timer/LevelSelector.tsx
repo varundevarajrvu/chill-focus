@@ -30,7 +30,7 @@ export function LevelSelector() {
             onClick={() => setLevel(option.level)}
             title={disabled ? 'Level is locked while a session is running' : undefined}
             className={`rounded-full px-3 py-1.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50 ${
-              active ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink'
+              active ? 'bg-accent text-accent-ink' : 'text-ink-muted hover:text-ink'
             }`}
           >
             {option.label}

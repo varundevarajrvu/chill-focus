@@ -26,7 +26,7 @@ export function AmbientPanel() {
           onClick={() => (playing ? pause() : play())}
           disabled={!trackId}
           aria-pressed={playing}
-          className="rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-white outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
         >
           {playing ? 'Pause' : 'Play'}
         </button>
@@ -44,7 +44,7 @@ export function AmbientPanel() {
               title={trackLocked ? TRACK_LOCKED_MESSAGE : undefined}
               onClick={() => selectTrack(track.id)}
               className={`rounded-full px-3 py-1.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50 ${
-                active ? 'bg-accent text-white' : 'border border-ink-muted/20 text-ink-muted hover:text-ink'
+                active ? 'bg-accent text-accent-ink' : 'border border-ink-muted/20 text-ink-muted hover:text-ink'
               }`}
             >
               {track.label}
@@ -54,7 +54,7 @@ export function AmbientPanel() {
       </div>
 
       {trackLocked && (
-        <p role="status" className="text-xs text-ink-muted/70">
+        <p role="status" className="text-xs text-ink-muted">
           {TRACK_LOCKED_MESSAGE}. Volume and play/pause still work.
         </p>
       )}

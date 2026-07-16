@@ -9,22 +9,25 @@
 [data-mode="chill"] {
   --accent: oklch(0.72 0.15 55); /* warm */
   --accent-soft: oklch(0.92 0.05 55);
+  --accent-ink: oklch(0.18 0.03 55);
   --surface: oklch(0.99 0.004 80);
   --ink: oklch(0.32 0.02 80);
-  --ink-muted: oklch(0.52 0.02 80);
+  --ink-muted: oklch(0.47 0.02 80);
 }
 
 [data-mode="focus"] {
   --accent: oklch(0.62 0.08 235); /* cool */
   --accent-soft: oklch(0.9 0.03 235);
+  --accent-ink: oklch(0.15 0.02 235);
   --surface: oklch(0.98 0.004 235);
   --ink: oklch(0.3 0.015 235);
-  --ink-muted: oklch(0.5 0.015 235);
+  --ink-muted: oklch(0.46 0.015 235);
 }
 
 @theme {
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
   --color-surface: var(--surface);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);

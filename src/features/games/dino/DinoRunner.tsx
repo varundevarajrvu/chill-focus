@@ -279,7 +279,7 @@ export function DinoRunner() {
         <button
           type="button"
           onClick={start}
-          className="rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-white outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+          className="rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
         >
           Restart
         </button>

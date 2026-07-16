@@ -62,7 +62,7 @@ function NotesAndTodo() {
           className="flex min-h-12 w-full items-center justify-between rounded-2xl border border-dashed border-accent/40 bg-surface px-6 text-left text-sm font-medium text-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
         >
           Notes &amp; to-do
-          <span className="text-xs text-ink-muted/70">Expand</span>
+          <span className="text-xs text-ink-muted">Expand</span>
         </motion.button>
       )}
 

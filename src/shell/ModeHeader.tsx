@@ -7,7 +7,7 @@ export function ModeHeader() {
   return (
     <header className="flex items-center justify-between px-6 py-5 sm:px-10">
       <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-ink-muted/70">
+        <p className="text-xs uppercase tracking-[0.2em] text-ink-muted">
           Chill / Focus
         </p>
         <h1 className="text-lg font-semibold text-ink">

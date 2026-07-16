@@ -40,14 +40,14 @@ export function TodoList() {
         <button
           type="submit"
           disabled={!draft.trim()}
-          className="rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-white outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
         >
           Add
         </button>
       </form>
 
       {items.length === 0 ? (
-        <p className="text-xs text-ink-muted/70">No tasks yet — add one above.</p>
+        <p className="text-xs text-ink-muted">No tasks yet — add one above.</p>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {items.map((item) => (
@@ -61,7 +61,7 @@ export function TodoList() {
               />
               <span
                 className={`flex-1 text-sm ${
-                  item.done ? 'text-ink-muted/60 line-through' : 'text-ink'
+                  item.done ? 'text-ink-muted line-through' : 'text-ink'
                 }`}
               >
                 {item.text}
