@@ -5,6 +5,11 @@ import { useTabTitle } from '../hooks/useTabTitle'
 import { AppreciationOverlay } from '../features/appreciation/AppreciationOverlay'
 import { ModeHeader } from './ModeHeader'
 import { ModeStage } from './ModeStage'
+// Side-effect import: activates the module-level audio manager's store
+// subscription. Mounted here (not in FocusLayout/AmbientPanel) so ambient
+// audio keeps playing across Chill/Focus mode switches — the manager is
+// global, only the panel UI is focus-only.
+import '../features/audio/audioManager'
 
 export function AppShell() {
   const mode = useModeStore((s) => s.mode)

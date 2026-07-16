@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTimerStore } from '../stores/timerStore'
 import { LEVELS } from '../features/timer/levels'
 import { TimerPanel } from '../features/timer/TimerPanel'
+import { AmbientPanel } from '../features/audio/AmbientPanel'
 
 function NotesPlaceholder() {
   const level = useTimerStore((s) => s.level)
@@ -59,7 +60,10 @@ function NotesPlaceholder() {
 export function FocusLayout() {
   return (
     <div className="grid gap-6 sm:grid-cols-2">
-      <TimerPanel />
+      <div className="flex flex-col gap-6">
+        <TimerPanel />
+        <AmbientPanel />
+      </div>
       <NotesPlaceholder />
     </div>
   )
