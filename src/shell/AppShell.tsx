@@ -10,6 +10,9 @@ import { ModeStage } from './ModeStage'
 // audio keeps playing across Chill/Focus mode switches — the manager is
 // global, only the panel UI is focus-only.
 import '../features/audio/audioManager'
+// Side-effect import: keeps chill music and focus ambient audio mutually
+// exclusive — starting one pauses the other. Global for the same reason.
+import '../lib/audioExclusivity'
 
 export function AppShell() {
   const mode = useModeStore((s) => s.mode)
