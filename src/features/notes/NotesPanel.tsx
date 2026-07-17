@@ -8,7 +8,7 @@ export function NotesPanel() {
 
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={inputId} className="text-sm font-medium text-ink">
+      <label htmlFor={inputId} className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
         Notes
       </label>
       <textarea
@@ -17,7 +17,7 @@ export function NotesPanel() {
         onChange={(e) => setText(e.target.value)}
         placeholder="Jot anything down…"
         rows={6}
-        className="w-full resize-y rounded-xl border border-ink-muted/20 bg-white/60 p-3 text-sm text-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+        className="w-full resize-y rounded-xl bg-ink-muted/[0.06] p-3 text-sm text-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
       />
     </div>
   )

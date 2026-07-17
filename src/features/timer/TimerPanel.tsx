@@ -24,11 +24,11 @@ export function TimerPanel() {
 
   return (
     <section
-      className="flex flex-col gap-4 rounded-2xl border border-accent/30 bg-surface p-6"
+      className="shadow-hero flex flex-col gap-5 rounded-3xl bg-surface-raised p-6 sm:p-10"
       onClick={message ? dismiss : undefined}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-ink">Timer</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Timer</h2>
         {!hideNonEssential && <LevelSelector />}
       </div>
 

@@ -5,12 +5,12 @@ export function ModeHeader() {
   const mode = useModeStore((s) => s.mode)
 
   return (
-    <header className="flex items-center justify-between px-6 py-5 sm:px-10">
+    <header className="flex items-center justify-between px-6 pt-8 pb-4 sm:px-10 sm:pt-12">
       <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-ink-muted">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-ink-muted">
           Chill / Focus
         </p>
-        <h1 className="text-lg font-semibold text-ink">
+        <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-ink sm:text-[2rem]">
           {mode === 'chill' ? 'Chill mode' : 'Focus mode'}
         </h1>
       </div>

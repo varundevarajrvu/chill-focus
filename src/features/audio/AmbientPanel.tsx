@@ -18,9 +18,9 @@ export function AmbientPanel() {
   const trackLocked = isTrackSelectionLocked(level, status)
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-accent/30 bg-surface p-6">
+    <section className="flex flex-col gap-3 border-t border-ink-muted/10 pt-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-ink">Ambient sound</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Ambient sound</h2>
         <button
           type="button"
           onClick={() => (playing ? pause() : play())}

@@ -16,7 +16,7 @@ export function TodoList() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-ink">To-do</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">To-do</h3>
       </div>
 
       <form
@@ -35,7 +35,7 @@ export function TodoList() {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Add a task…"
-          className="flex-1 rounded-full border border-ink-muted/20 bg-white/60 px-4 py-1.5 text-sm text-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+          className="flex-1 rounded-full bg-ink-muted/[0.06] px-4 py-1.5 text-sm text-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
         />
         <button
           type="submit"

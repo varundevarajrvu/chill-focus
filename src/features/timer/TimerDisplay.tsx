@@ -17,9 +17,12 @@ export function TimerDisplay() {
   const ss = totalSec % 60
 
   return (
-    <div className="flex flex-col items-center gap-1 py-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-ink-muted">{PHASE_LABEL[phase]}</p>
-      <p className="font-mono text-5xl font-semibold tabular-nums text-ink" aria-live="off">
+    <div className="flex flex-col items-center gap-2 py-4 sm:py-6">
+      <p className="text-xs font-semibold uppercase tracking-[0.32em] text-ink-muted">{PHASE_LABEL[phase]}</p>
+      <p
+        className="text-[clamp(4.5rem,10vw,6.5rem)] font-extrabold leading-none tabular-nums text-ink"
+        aria-live="off"
+      >
         {mm}:{ss.toString().padStart(2, '0')}
       </p>
       <p className="text-xs text-ink-muted">

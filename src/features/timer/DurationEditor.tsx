@@ -13,7 +13,7 @@ export function DurationEditor() {
   const { focusMin, breakMin } = effectiveDurations(level, customDurations)
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-ink-muted">
+    <div className="flex flex-wrap items-center justify-center gap-5 border-t border-ink-muted/10 pt-4 text-xs text-ink-muted">
       <label className="flex items-center gap-2">
         Focus
         <input
@@ -23,10 +23,13 @@ export function DurationEditor() {
           value={focusMin}
           disabled={disabled}
           onChange={(e) => setCustomDuration(level, 'focusMin', e.target.valueAsNumber)}
-          className="w-16 rounded-lg border border-ink-muted/20 bg-surface px-2 py-1 text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-14 rounded-lg border border-ink-muted/15 bg-transparent px-2 py-1 text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
         />
         min
       </label>
+      <span className="text-ink-muted/40" aria-hidden="true">
+        ·
+      </span>
       <label className="flex items-center gap-2">
         Break
         <input
@@ -36,7 +39,7 @@ export function DurationEditor() {
           value={breakMin}
           disabled={disabled}
           onChange={(e) => setCustomDuration(level, 'breakMin', e.target.valueAsNumber)}
-          className="w-16 rounded-lg border border-ink-muted/20 bg-surface px-2 py-1 text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-14 rounded-lg border border-ink-muted/15 bg-transparent px-2 py-1 text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
         />
         min
       </label>

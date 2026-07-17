@@ -29,15 +29,19 @@ export function MusicPlayer() {
   const current = PLAYLIST[trackIndex]
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-accent/30 bg-surface p-6">
-      <div>
-        <h2 className="text-base font-semibold text-ink">Music player</h2>
-        <p className="mt-1 truncate text-sm text-ink-muted" title={`${current.title} — ${current.artist}`}>
-          {current.title} <span className="text-ink-muted">— {current.artist}</span>
+    <section className="shadow-hero flex flex-col gap-6 rounded-3xl bg-surface-raised p-6 sm:p-10">
+      <div className="flex flex-col items-center gap-1 text-center">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Music player</h2>
+        <p
+          className="mt-2 max-w-full truncate text-2xl font-bold text-ink sm:text-3xl"
+          title={`${current.title} — ${current.artist}`}
+        >
+          {current.title}
         </p>
+        <p className="text-sm text-ink-muted">{current.artist}</p>
       </div>
 
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex items-center justify-center gap-5">
         <motion.button
           type="button"
           onClick={prev}
@@ -45,9 +49,9 @@ export function MusicPlayer() {
           whileHover={chillHover}
           whileTap={chillTap}
           transition={chillSpring}
-          className="rounded-full border border-ink-muted/20 px-3 py-1.5 text-sm font-medium text-ink-muted outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
+          className="flex size-11 items-center justify-center rounded-full text-ink-muted outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
         >
-          ⏮
+          <SkipBackIcon />
         </motion.button>
         <motion.button
           type="button"
@@ -57,9 +61,9 @@ export function MusicPlayer() {
           whileHover={chillHover}
           whileTap={chillTap}
           transition={chillSpring}
-          className="rounded-full bg-accent px-5 py-1.5 text-sm font-medium text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+          className="flex size-16 items-center justify-center rounded-full bg-accent text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
         >
-          {playing ? 'Pause' : 'Play'}
+          {playing ? <PauseIcon /> : <PlayIcon />}
         </motion.button>
         <motion.button
           type="button"
@@ -68,9 +72,9 @@ export function MusicPlayer() {
           whileHover={chillHover}
           whileTap={chillTap}
           transition={chillSpring}
-          className="rounded-full border border-ink-muted/20 px-3 py-1.5 text-sm font-medium text-ink-muted outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
+          className="flex size-11 items-center justify-center rounded-full text-ink-muted outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
         >
-          ⏭
+          <SkipForwardIcon />
         </motion.button>
       </div>
 
@@ -88,7 +92,7 @@ export function MusicPlayer() {
         />
       </label>
 
-      <ul aria-label="Playlist" className="flex flex-col gap-1">
+      <ul aria-label="Playlist" className="flex flex-col divide-y divide-ink-muted/10 border-t border-ink-muted/10">
         {PLAYLIST.map((track, index) => {
           const active = index === trackIndex
           return (
@@ -97,20 +101,61 @@ export function MusicPlayer() {
                 type="button"
                 aria-pressed={active}
                 onClick={() => selectTrack(index)}
-                whileHover={{ scale: 1.015 }}
+                whileHover={{ scale: 1.01 }}
                 whileTap={chillTap}
                 transition={chillSpring}
-                className={`flex w-full flex-col items-start gap-0.5 rounded-xl px-3 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
-                  active ? 'bg-accent text-accent-ink' : 'border border-ink-muted/20 text-ink-muted hover:text-ink'
+                className={`flex w-full flex-col items-start gap-0.5 border-l-[3px] px-3 py-2.5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
+                  active
+                    ? 'border-accent bg-accent-soft/70 text-ink'
+                    : 'border-transparent text-ink-muted hover:bg-ink-muted/5 hover:text-ink'
                 }`}
               >
                 <span className="text-sm font-medium">{track.title}</span>
-                <span className={`text-xs ${active ? 'text-accent-ink' : 'text-ink-muted'}`}>{track.artist}</span>
+                <span className="text-xs text-ink-muted">{track.artist}</span>
               </motion.button>
             </li>
           )
         })}
       </ul>
     </section>
+  )
+}
+
+// Presentational transport glyphs. Play/Pause keep their required accessible
+// names via aria-label on the parent button — only the visible glyph swaps
+// from text to icon, so the a11y contract (name = "Play"/"Pause") is
+// untouched.
+function PlayIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="ml-0.5 size-6" fill="currentColor" aria-hidden="true">
+      <path d="M7 4.5v15l13-7.5-13-7.5Z" />
+    </svg>
+  )
+}
+
+function PauseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-6" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="4.5" width="4" height="15" rx="1" />
+      <rect x="14" y="4.5" width="4" height="15" rx="1" />
+    </svg>
+  )
+}
+
+function SkipBackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">
+      <rect x="5" y="5" width="2.2" height="14" rx="0.6" />
+      <path d="M19 5.5v13L8.5 12 19 5.5Z" />
+    </svg>
+  )
+}
+
+function SkipForwardIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">
+      <rect x="16.8" y="5" width="2.2" height="14" rx="0.6" />
+      <path d="M5 5.5v13L15.5 12 5 5.5Z" />
+    </svg>
   )
 }

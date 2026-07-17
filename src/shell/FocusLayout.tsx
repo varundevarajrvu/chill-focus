@@ -44,7 +44,7 @@ function NotesAndTodo() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={fade}
-          className="flex min-h-12 items-center justify-center rounded-2xl border border-dashed border-accent/40 bg-surface px-6 text-xs font-medium text-ink-muted outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
+          className="flex min-h-12 items-center justify-center rounded-2xl border border-dashed border-accent/30 px-6 text-xs font-medium text-ink-muted outline-none transition-colors hover:bg-ink-muted/5 hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
         >
           Show notes &amp; to-do
         </motion.button>
@@ -59,7 +59,7 @@ function NotesAndTodo() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={fade}
-          className="flex min-h-12 w-full items-center justify-between rounded-2xl border border-dashed border-accent/40 bg-surface px-6 text-left text-sm font-medium text-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+          className="flex min-h-12 w-full items-center justify-between rounded-2xl border border-dashed border-accent/30 px-6 text-left text-sm font-medium text-ink outline-none transition-colors hover:bg-ink-muted/5 focus-visible:ring-2 focus-visible:ring-accent"
         >
           Notes &amp; to-do
           <span className="text-xs text-ink-muted">Expand</span>
@@ -73,9 +73,11 @@ function NotesAndTodo() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={fade}
-          className="flex min-h-48 flex-col gap-6 rounded-2xl border border-accent/30 bg-surface p-6"
+          className="flex min-h-48 flex-col gap-6 border-t border-ink-muted/10 pt-8 sm:border-t-0 sm:border-l sm:border-ink-muted/10 sm:pl-8 sm:pt-0"
         >
-          <h2 className="text-base font-semibold text-ink">Notes &amp; to-do</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
+            Notes &amp; to-do
+          </h2>
           <NotesPanel />
           <hr className="border-t border-ink-muted/15" />
           <TodoList />
@@ -87,12 +89,14 @@ function NotesAndTodo() {
 
 export function FocusLayout() {
   return (
-    <div className="grid gap-6 sm:grid-cols-2">
-      <div className="flex flex-col gap-6">
+    <div className="grid gap-10 sm:grid-cols-5 sm:gap-8 lg:gap-12">
+      <div className="flex flex-col gap-8 sm:col-span-3">
         <TimerPanel />
         <AmbientPanel />
       </div>
-      <NotesAndTodo />
+      <div className="sm:col-span-2">
+        <NotesAndTodo />
+      </div>
     </div>
   )
 }

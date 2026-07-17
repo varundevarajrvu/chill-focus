@@ -35,9 +35,9 @@ export function AppShell() {
   useTabTitle()
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-4xl flex-col">
+    <div className="mx-auto flex min-h-screen max-w-5xl flex-col">
       <ModeHeader />
-      <main className="flex-1 px-6 pb-10 sm:px-10">
+      <main className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 sm:py-16">
         <ModeStage />
       </main>
       <AppreciationOverlay />

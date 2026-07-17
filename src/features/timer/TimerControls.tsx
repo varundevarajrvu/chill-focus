@@ -26,14 +26,14 @@ export function TimerControls() {
       <button
         type="button"
         onClick={isRunning ? pause : start}
-        className="rounded-full bg-accent px-6 py-2 text-sm font-medium text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+        className="rounded-full bg-accent px-9 py-3 text-base font-semibold text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
       >
         {primaryLabel}
       </button>
       <button
         type="button"
         onClick={reset}
-        className="rounded-full border border-ink-muted/20 px-6 py-2 text-sm font-medium text-ink-muted outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
+        className="rounded-full px-6 py-3 text-sm font-medium text-ink-muted outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-accent"
       >
         Reset
       </button>
