@@ -29,7 +29,7 @@ export function MusicPlayer() {
   const current = PLAYLIST[trackIndex]
 
   return (
-    <section className="shadow-hero flex flex-col gap-6 rounded-3xl bg-surface-raised p-6 sm:p-10">
+    <section className="shadow-hero flex flex-col gap-6 rounded-[24px_30px_24px_28px] bg-surface-raised p-6 sm:p-10">
       <div className="flex flex-col items-center gap-1 text-center">
         <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Music player</h2>
         <p
@@ -61,7 +61,7 @@ export function MusicPlayer() {
           whileHover={chillHover}
           whileTap={chillTap}
           transition={chillSpring}
-          className="flex size-16 items-center justify-center rounded-full bg-accent text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+          className="btn-primary-sheen flex size-16 items-center justify-center rounded-full bg-accent text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
         >
           {playing ? <PauseIcon /> : <PlayIcon />}
         </motion.button>

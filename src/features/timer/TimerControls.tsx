@@ -26,7 +26,7 @@ export function TimerControls() {
       <button
         type="button"
         onClick={isRunning ? pause : start}
-        className="rounded-full bg-accent px-9 py-3 text-base font-semibold text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+        className="btn-primary-sheen rounded-full bg-accent px-9 py-3 text-base font-semibold text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
       >
         {primaryLabel}
       </button>

@@ -3,6 +3,7 @@ import { useModeStore } from '../stores/modeStore'
 import { useTimerStore } from '../stores/timerStore'
 import { useTabTitle } from '../hooks/useTabTitle'
 import { AppreciationOverlay } from '../features/appreciation/AppreciationOverlay'
+import { BackgroundAmbience } from './BackgroundAmbience'
 import { ModeHeader } from './ModeHeader'
 import { ModeStage } from './ModeStage'
 // Side-effect import: activates the module-level audio manager's store
@@ -36,6 +37,7 @@ export function AppShell() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col">
+      <BackgroundAmbience />
       <ModeHeader />
       <main className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 sm:py-16">
         <ModeStage />

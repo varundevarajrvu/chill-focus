@@ -24,7 +24,7 @@ export function TimerPanel() {
 
   return (
     <section
-      className="shadow-hero flex flex-col gap-5 rounded-3xl bg-surface-raised p-6 sm:p-10"
+      className="shadow-hero flex flex-col gap-5 rounded-[28px_24px_30px_24px] bg-surface-raised p-6 sm:p-10"
       onClick={message ? dismiss : undefined}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">

@@ -110,10 +110,10 @@ function GamesCard() {
 export function ChillLayout() {
   return (
     <div className="grid gap-10 sm:grid-cols-5 sm:gap-8 lg:gap-12">
-      <div className="sm:col-span-3">
+      <div className="min-w-0 sm:col-span-3">
         <MusicPlayer />
       </div>
-      <div className="sm:col-span-2">
+      <div className="min-w-0 sm:col-span-2">
         <GamesCard />
       </div>
     </div>
