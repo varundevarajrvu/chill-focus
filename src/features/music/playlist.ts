@@ -8,6 +8,10 @@ export interface MusicTrack {
   artist: string
   /** Vite-resolved asset URL — bundled/hashed at build time, served on demand. */
   src: string
+  /** Real measured duration in seconds — drives the playlist chart's bar
+   *  length and duration label (MusicPlayer). Not used for playback logic;
+   *  Howler's own `onend` still governs when a track actually finishes. */
+  durationSec: number
 }
 
 // Bundled Pixabay-licensed MP3s (see features/music/tracks/LICENSES.md — do
@@ -19,18 +23,21 @@ export const PLAYLIST: MusicTrack[] = [
     title: 'Good Night - Lofi Cozy Chill Music',
     artist: 'FASSounds',
     src: track1Url,
+    durationSec: 147,
   },
   {
     id: 'track2',
     title: 'Chill Pop',
     artist: 'Kulakovka',
     src: track2Url,
+    durationSec: 154,
   },
   {
     id: 'track3',
     title: 'Feel Good Electronic Beat',
     artist: 'Tunetank',
     src: track3Url,
+    durationSec: 131,
   },
 ]
 

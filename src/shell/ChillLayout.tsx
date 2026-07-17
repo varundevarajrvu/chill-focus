@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { GAME_LIST, GAMES } from '../features/games'
 import { MusicPlayer } from '../features/music/MusicPlayer'
 import { chillHover, chillPop, chillSpring, chillTap } from '../lib/motion'
+import { ScrollRocket } from './ScrollRocket'
 
 // This layout only ever renders in chill mode (see ModeStage), so it reaches
 // directly for the chill presets instead of going through useModeMotion.
@@ -20,6 +21,30 @@ function GameGlyph({ id }: { id: string }) {
       </svg>
     )
   }
+  if (id === 'memory-match') {
+    return (
+      <svg viewBox="0 0 24 24" className="size-7" aria-hidden="true">
+        <rect x="3" y="5" width="12" height="12" rx="3" fill="var(--color-accent-soft)" />
+        <rect x="9" y="9" width="12" height="12" rx="3" fill="var(--color-accent)" />
+      </svg>
+    )
+  }
+  if (id === 'snake') {
+    return (
+      <svg viewBox="0 0 24 24" className="size-7" aria-hidden="true">
+        <rect x="2.5" y="4" width="4.5" height="4.5" rx="1.2" fill="var(--color-accent)" />
+        <rect x="7" y="4" width="4.5" height="4.5" rx="1.2" fill="var(--color-accent)" />
+        <rect x="7" y="8.5" width="4.5" height="4.5" rx="1.2" fill="var(--color-accent)" />
+        <rect x="11.5" y="8.5" width="4.5" height="4.5" rx="1.2" fill="var(--color-accent)" />
+        <rect x="11.5" y="13" width="4.5" height="4.5" rx="1.2" fill="var(--color-accent)" />
+        <rect x="16" y="13" width="4.5" height="4.5" rx="1.2" fill="var(--color-accent)" />
+      </svg>
+    )
+  }
+  // Fallback — covers 'tic-tac-toe' plus any future game id added without a
+  // dedicated glyph case (registry stays the single source of truth; this
+  // switch is purely presentational and never blocks a new game from
+  // rendering, just falls back to a generic mark).
   return (
     <span aria-hidden="true" className="flex items-center gap-1 text-xl font-bold leading-none">
       <span className="text-ink">✕</span>
@@ -38,7 +63,7 @@ function GamesCard() {
   const reduceMotion = useReducedMotion()
 
   return (
-    <section className="flex min-h-48 flex-col gap-6 border-t border-ink-muted/10 pt-8 sm:border-t-0 sm:border-l sm:border-ink-muted/10 sm:pl-8 sm:pt-0">
+    <div className="flex min-h-48 flex-col gap-6">
       <AnimatePresence mode="wait" initial={false}>
         {selected && GameComponent ? (
           <motion.div
@@ -73,13 +98,17 @@ function GamesCard() {
             animate={chillPop.animate}
             exit={reduceMotion ? undefined : chillPop.exit}
             transition={reduceMotion ? { duration: 0 } : chillSpring}
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-5"
           >
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Games</h2>
               <p className="mt-1 text-sm text-ink-muted">Pick one to play.</p>
             </div>
-            <div className="flex flex-col gap-3">
+            {/* 2x2 tile grid — springy tiles, same picker semantics as before
+                (click selects, selected game mounts in place with Back).
+                grid-cols-2 reads correctly whether the registry currently
+                holds 2 or 4 entries (a partial last row is fine). */}
+            <div className="grid grid-cols-2 gap-4 sm:gap-5">
               {GAME_LIST.map((game) => (
                 <motion.button
                   key={game.id}
@@ -88,14 +117,14 @@ function GamesCard() {
                   whileHover={chillHover}
                   whileTap={chillTap}
                   transition={chillSpring}
-                  className="flex items-center gap-4 rounded-2xl bg-ink-muted/[0.05] p-4 text-left outline-none transition-colors hover:bg-accent-soft/60 focus-visible:ring-2 focus-visible:ring-accent"
+                  className="flex flex-col items-center gap-3 rounded-2xl bg-ink-muted/[0.05] p-5 text-center outline-none transition-colors hover:bg-accent-soft/60 focus-visible:ring-2 focus-visible:ring-accent"
                 >
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface-raised">
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-surface-raised">
                     <GameGlyph id={game.id} />
                   </span>
                   <span className="flex flex-col gap-0.5">
                     <span className="text-sm font-medium text-ink">{game.label}</span>
-                    <span className="text-xs text-ink-muted">{game.description}</span>
+                    <span className="line-clamp-2 text-xs text-ink-muted">{game.description}</span>
                   </span>
                 </motion.button>
               ))}
@@ -103,19 +132,47 @@ function GamesCard() {
           </motion.div>
         )}
       </AnimatePresence>
-    </section>
+    </div>
+  )
+}
+
+/**
+ * Wraps a chill section so it pops in the first time it scrolls into view
+ * (`whileInView`, `viewport={{ once: true }}` — never re-triggers on
+ * scroll-back-up). Reduced motion renders the section in its final state
+ * immediately: no initial/whileInView props at all, so there's nothing to
+ * animate from.
+ */
+function ScrollSection({ children }: { children: ReactNode }) {
+  const reduceMotion = useReducedMotion()
+
+  if (reduceMotion) {
+    return <section className="w-full">{children}</section>
+  }
+
+  return (
+    <motion.section
+      className="w-full"
+      initial={chillPop.initial}
+      whileInView={chillPop.animate}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={chillSpring}
+    >
+      {children}
+    </motion.section>
   )
 }
 
 export function ChillLayout() {
   return (
-    <div className="grid gap-10 sm:grid-cols-5 sm:gap-8 lg:gap-12">
-      <div className="min-w-0 sm:col-span-3">
+    <div className="flex flex-col gap-20 pb-40 pt-2 sm:gap-28">
+      <ScrollSection>
         <MusicPlayer />
-      </div>
-      <div className="min-w-0 sm:col-span-2">
+      </ScrollSection>
+      <ScrollSection>
         <GamesCard />
-      </div>
+      </ScrollSection>
+      <ScrollRocket />
     </div>
   )
 }

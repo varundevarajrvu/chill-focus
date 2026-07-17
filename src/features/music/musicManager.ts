@@ -69,3 +69,19 @@ function reconcile(): void {
 }
 
 useMusicStore.subscribe(reconcile)
+
+/**
+ * Live playback position in seconds, read straight off the active Howl.
+ * Additive read-only accessor for MusicPlayer's playlist-chart progress fill
+ * — doesn't touch the reconcile loop or musicStore. Safe to call anytime:
+ * 0 when nothing is loaded/active, and guarded against Howler throwing
+ * before the underlying audio node is ready.
+ */
+export function getMusicPosition(): number {
+  try {
+    const pos = currentHowl?.seek()
+    return typeof pos === 'number' ? pos : 0
+  } catch {
+    return 0
+  }
+}

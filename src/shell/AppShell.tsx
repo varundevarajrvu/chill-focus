@@ -39,7 +39,19 @@ export function AppShell() {
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col">
       <BackgroundAmbience />
       <ModeHeader />
-      <main className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 sm:py-16">
+      {/* Focus stays vertically centered (its content is a fixed-height hero +
+          rail, shorter than the viewport on most screens). Chill's new
+          scrolling layout is naturally tall/variable-height — centering it
+          would fight the scroll journey (e.g. yank the Games section upward
+          into view before the user scrolls), so chill flows top-down instead.
+          Gated off modeStore rather than a content-height measurement: it's
+          the simplest correct rule given chill/focus are structurally fixed
+          per mode (Section 6), not something to detect at runtime. */}
+      <main
+        className={`flex flex-1 flex-col px-6 py-10 sm:px-10 sm:py-16 ${
+          mode === 'focus' ? 'justify-center' : 'justify-start'
+        }`}
+      >
         <ModeStage />
       </main>
       <AppreciationOverlay />

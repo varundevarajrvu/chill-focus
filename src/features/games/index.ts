@@ -1,6 +1,8 @@
 import type { ComponentType } from 'react'
 import { TicTacToe } from './tic-tac-toe/TicTacToe'
 import { DinoRunner } from './dino/DinoRunner'
+import { MemoryMatch } from './memory-match/MemoryMatch'
+import { SnakeGame } from './snake/SnakeGame'
 
 export interface GameDefinition {
   id: string
@@ -24,6 +26,18 @@ export const GAMES: Record<string, GameDefinition> = {
     label: 'Dino Runner',
     description: 'Jump obstacles in an endless runner. Beat your high score.',
     component: DinoRunner,
+  },
+  'memory-match': {
+    id: 'memory-match',
+    label: 'Memory Match',
+    description: 'Flip cards, find all 8 pairs in the fewest moves.',
+    component: MemoryMatch,
+  },
+  snake: {
+    id: 'snake',
+    label: 'Snake',
+    description: "Steer, eat, grow. Don't bite yourself.",
+    component: SnakeGame,
   },
 }
 
