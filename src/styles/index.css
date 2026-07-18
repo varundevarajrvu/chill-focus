@@ -17,43 +17,53 @@
   --ink-muted: oklch(0.47 0.02 80);
 
   /*
-   * Ambient background blobs (BackgroundAmbience.tsx) — warm peach/amber/
-   * soft-coral pastels. Chosen at very high luminance (close to the paper's
-   * own #faf9f4) and low chroma specifically so that, composited at the
-   * layer's ~0.4 opacity cap, the worst-case blob-center pixel only shifts
-   * background luminance from ~0.946 to ~0.86-0.91 — nowhere near enough to
-   * drag ink-muted text (contrast ~6.5:1 on bare paper) below 4.5:1 (verified
-   * ~5.9-6.3:1 at blob center in the ui-builder pass; see phase report).
+   * Ambient background blobs (BackgroundAmbience.tsx) — warm apricot/gold/
+   * coral, deliberately more saturated since the amp-up pass ("clearly an
+   * animated scene"). Composited at the layer's raised --ambient-opacity cap
+   * of 0.55 (was 0.4), worst case is a blob's own center pixel over paper
+   * (Y≈0.946), via real sRGB relative luminance:
+   *   #ffcf94 (apricot) Y_full = 0.680 -> Y_comp = 0.55*0.680+0.45*0.946 = 0.800
+   *   #ffdd7e (gold)    Y_full = 0.745 -> Y_comp = 0.835
+   *   #ffb3a1 (coral)   Y_full = 0.561 -> Y_comp = 0.734  <- tightest of the 3
+   * Contrast vs ink-muted text (chill light, Y≈0.104): 5.52 / 5.75 / 5.09:1
+   * — all clear 4.5:1 (headroom deliberately spent for visibility; this
+   * pass's budget floor is ~4.6:1 for the worst pair anywhere in the file).
    * Never read these as bg-accent substitutes — they are decoration-only.
    */
-  --ambient-1: #ffe3bf;
-  --ambient-2: #ffedc2;
-  --ambient-3: #ffd9d2;
+  --ambient-1: #ffcf94;
+  --ambient-2: #ffdd7e;
+  --ambient-3: #ffb3a1;
 
   /*
-   * Drifting motes (BackgroundAmbience.tsx, Feature 4) — soft warm
-   * accent-tinted dot, plain hex (full alpha) same as the blob tokens
-   * above: composited through the shared --ambient-opacity (0.4 default)
-   * against the paper body background (Y≈0.946), worst case at a mote's
-   * own center is Y_composite = 0.4*0.669 + 0.6*0.946 = 0.835 (mote hex
-   * #f7cf9f -> Y≈0.669 via sRGB relative luminance). Contrast vs ink-muted
-   * text (chill light, Y≈0.104) = (0.835+.05)/(0.104+.05) = 5.75:1 — clears
-   * 4.5:1 with room, so light mode needs no extra attenuation.
+   * Drifting motes (BackgroundAmbience.tsx, Feature 4) — warm accent-tinted
+   * dot, plain hex (full alpha) same as the blob tokens above, more
+   * saturated since the amp-up pass: composited through the shared
+   * --ambient-opacity (0.55 default) against paper (Y≈0.946), worst case at
+   * a mote's own center is Y_composite = 0.55*0.5525 + 0.45*0.946 = 0.730
+   * (mote hex #f7b871 -> Y≈0.5525 via sRGB relative luminance). Contrast vs
+   * ink-muted text (chill light, Y≈0.104) = (0.730+.05)/(0.104+.05) =
+   * 5.06:1 — clears 4.5:1, so light mode needs no extra attenuation.
    */
-  --mote: #f7cf9f;
+  --mote: #f7b871;
 
   /*
-   * Lava-lamp bubbles (BackgroundAmbience.tsx, chill-only) — soft peach/amber
-   * tint, plain hex (full alpha) composited through the same shared
-   * --ambient-opacity (0.4) the blobs/motes use: Y_full(#ffcf9e) = 0.6835 ->
-   * Y_composite = 0.4*0.6835 + 0.6*0.946 (paper) = 0.8411. Contrast vs
-   * ink-muted text (chill light, Y≈0.104) = (0.8411+.05)/(0.104+.05) =
-   * 5.79:1 — clears 4.5:1 with the same order of margin as the mote token
-   * above, even though bubbles render much larger (60-140px) than motes,
-   * because the radial-gradient's own falloff means only the bubble's exact
-   * center pixel ever reaches this worst case.
+   * Lava-lamp bubbles (BackgroundAmbience.tsx, chill-only) — saturated
+   * peach/orange since the amp-up pass, composited through the shared
+   * --ambient-opacity (0.55): Y_full(#ffb066) = 0.5327 -> Y_composite =
+   * 0.55*0.5327 + 0.45*0.946 (paper) = 0.719. Contrast vs ink-muted text
+   * (chill light, Y≈0.104) = (0.719+.05)/(0.104+.05) = 4.99:1 — clears
+   * 4.5:1, even though bubbles now render up to 220px, because the
+   * radial-gradient's own falloff means only the bubble's exact center
+   * pixel ever reaches this worst case.
+   *
+   * --bubble-rim is the lighter "orb rim" highlight stop (amp-up pass) —
+   * pure white in light mode only ever pushes the composite *toward* (in
+   * fact past) bare paper: Y_comp = 0.55*0.55*1.0 + (1-0.3025)*0.946 =
+   * 0.962 vs paper's own 0.946, i.e. it *raises* contrast vs dark text
+   * (6.57:1 at the rim's own peak) — always safe in light mode.
    */
-  --bubble: #ffcf9e;
+  --bubble: #ffb066;
+  --bubble-rim: rgba(255, 255, 255, 0.55);
 }
 
 [data-mode="focus"] {
@@ -66,29 +76,43 @@
   --ink: oklch(0.3 0.015 235);
   --ink-muted: oklch(0.46 0.015 235);
 
-  /* Ambient background blobs — cool mist blue/slate/pale cyan. Same
-   * luminance/contrast reasoning as the chill trio above. */
-  --ambient-1: #dbe7f5;
-  --ambient-2: #dfe3ea;
-  --ambient-3: #d8f0ee;
+  /* Ambient background blobs — sky blue/violet-slate/cyan, more saturated
+   * since the amp-up pass. Same reasoning as the chill trio above, at the
+   * shared 0.55 --ambient-opacity, worst case blob center over paper
+   * (Y≈0.946), contrast vs focus light ink-muted (Y≈0.097):
+   *   #a8c8ec (sky)          Y_full = 0.557 -> Y_comp = 0.732 -> 5.32:1
+   *   #b7c0d9 (violet-slate) Y_full = 0.528 -> Y_comp = 0.716 -> 5.21:1
+   *   #9fdfda (cyan)         Y_full = 0.652 -> Y_comp = 0.784 -> 5.68:1
+   * All clear 4.5:1. */
+  --ambient-1: #a8c8ec;
+  --ambient-2: #b7c0d9;
+  --ambient-3: #9fdfda;
 
-  /* Soft cool accent-tinted mote, same reasoning as chill's above: hex
-   * #cfe3f2 -> Y≈0.746; composite at 0.4 opacity vs paper (0.946) = 0.866;
-   * contrast vs focus light ink-muted (Y≈0.097) = 6.22:1. */
-  --mote: #cfe3f2;
+  /* Cool accent-tinted mote, more saturated since the amp-up pass: hex
+   * #a9cdef -> Y≈0.583; composite at 0.55 opacity vs paper (0.946) = 0.747;
+   * contrast vs focus light ink-muted (Y≈0.097) = 5.42:1. */
+  --mote: #a9cdef;
 
   /*
    * Breathing rings (BackgroundAmbience.tsx, focus-only) — cool sky-blue
-   * stroke tint, plain hex composited through the same shared
-   * --ambient-opacity (0.4): Y_full(#7fb2de) = 0.4163 -> Y_composite =
-   * 0.4*0.4163 + 0.6*0.946 (paper) = 0.7341. Contrast vs ink-muted text
-   * (focus light, Y≈0.097) = (0.7341+.05)/(0.097+.05) = 5.33:1 — clears
-   * 4.5:1. Rings are a thin 2px stroke rather than a filled disk, so actual
-   * on-screen coverage of this worst-case pixel is far smaller than a blob's,
-   * but the WCAG math is evaluated at the stroke's own color regardless of
-   * area, and it already clears with room.
+   * stroke tint, deeper since the amp-up pass (3px stroke, keyframe peak
+   * opacity 1.0), plain hex composited through the shared --ambient-opacity
+   * (0.55): Y_full(#6fabdd) = 0.3773 -> Y_composite = 0.55*0.3773 +
+   * 0.45*0.946 (paper) = 0.633. Contrast vs ink-muted text (focus light,
+   * Y≈0.097) = (0.633+.05)/(0.097+.05) = 4.65:1 — clears 4.5:1 inside this
+   * pass's ~4.6:1 floor; do not darken this hex further without redoing the
+   * math. Rings are a thin 3px stroke rather than a filled disk, so actual
+   * on-screen coverage of this worst-case pixel is tiny, but the WCAG math
+   * is evaluated at the stroke's own color regardless of area.
+   *
+   * --ring-glow is the soft filled center pulse behind the timer area
+   * (amp-up pass) — big radius, very low intrinsic alpha: effective blend
+   * alpha 0.55*0.35 = 0.1925 of rgb(175,200,235) (Y_full = 0.564) ->
+   * Y_comp = 0.1925*0.564 + 0.8075*0.946 = 0.873 -> contrast vs ink-muted
+   * (Y≈0.097) = 6.28:1 — comfortably clear.
    */
-  --ring: #7fb2de;
+  --ring: #6fabdd;
+  --ring-glow: rgba(175, 200, 235, 0.35);
 }
 
 /*
@@ -134,50 +158,60 @@
   --ink-muted: oklch(0.72 0.02 80);
 
   /*
-   * Dark aurora blobs — ember amber / deep magenta-brown / burnt orange.
-   * Real WCAG relative luminance (sRGB, not the oklch approximation):
-   *   #6b4423 (amber)        Y = 0.0738
-   *   #5a3040 (magenta-brown) Y = 0.0466
-   *   #7a3b12 (burnt orange)  Y = 0.0731
-   * Composited at the *same* --ambient-opacity as light mode (0.4 default,
+   * Dark aurora blobs — ember amber / deep magenta / burnt orange, pushed
+   * to higher chroma (less gray) in the amp-up pass while *slightly* darker
+   * in Y to fund the opacity raise. Real WCAG relative luminance (sRGB, not
+   * the oklch approximation):
+   *   #6b3a10 (ember amber)  Y = 0.0619
+   *   #5c1a38 (deep magenta) Y = 0.0330
+   *   #7a3305 (burnt orange) Y = 0.0652
+   * Composited at the *same* --ambient-opacity as light mode (0.55 default,
    * 0.18 at Level 3 — see the .ambient-layer rules below), worst case is a
    * blob's own center against surface (Y≈0.005): Y_composite =
-   * 0.4*0.0738 + 0.6*0.005 = 0.0325. Contrast vs ink-muted (Y=0.373, the
-   * text that sits directly on this background) = (0.373+.05)/(0.0325+.05)
-   * = 5.13:1 — clears 4.5:1.
+   * 0.55*0.0652 + 0.45*0.005 = 0.0381 (burnt orange, tightest). Contrast vs
+   * ink-muted (Y=0.373, the text that sits directly on this background) =
+   * (0.373+.05)/(0.0381+.05) = 4.80:1; amber 4.90:1, magenta 6.01:1 — all
+   * clear 4.5:1 inside the pass's ~4.6:1 floor.
    */
-  --ambient-1: #6b4423;
-  --ambient-2: #5a3040;
-  --ambient-3: #7a3b12;
+  --ambient-1: #6b3a10;
+  --ambient-2: #5c1a38;
+  --ambient-3: #7a3305;
 
   /*
    * Dark-theme motes read as a "pale glow" per spec — a bright color, unlike
    * the deliberately-dark blob hexes above. Composited at the *same*
-   * --ambient-opacity (0.4) that would be way too much alpha for a bright
-   * color against a near-black paper (0.4*Y_full ≈ 0.4*0.68 ≈ 0.27, which
-   * would crush contrast against ink-muted's Y≈0.373 to ~1.6:1). So the
+   * --ambient-opacity (0.55) that would be way too much alpha for a bright
+   * color against a near-black paper (0.55*Y_full ≈ 0.55*0.68 ≈ 0.38, which
+   * would crush contrast against ink-muted's Y≈0.373 to ~1.4:1). So the
    * intrinsic alpha is baked into the token itself (rgba, not a plain hex)
-   * at ~0.10, giving an effective blend alpha of 0.4*0.10=0.04:
-   * Y_composite = 0.04*0.6835 (rgb 255,207,158 full-alpha luminance) +
-   * 0.96*0.0041 (surface Y) = 0.0313. Contrast vs ink-muted (Y=0.373) =
-   * (0.373+.05)/(0.0313+.05) = 5.20:1 — clears 4.5:1, matching the same
-   * order of margin the dark aurora blobs above target. Do not swap this
-   * back to a plain hex without re-deriving this budget.
+   * at 0.09 (was 0.10 pre-amp-up — trimmed so the 0.4->0.55 layer raise
+   * still nets a visible boost: effective alpha 0.55*0.09 = 0.0495, +24%
+   * over the old 0.04): Y_composite = 0.0495*0.6835 (rgb 255,207,158
+   * full-alpha luminance) + 0.9505*0.005 (surface Y) = 0.0386. Contrast vs
+   * ink-muted (Y=0.373) = (0.373+.05)/(0.0386+.05) = 4.77:1 — clears 4.5:1.
+   * Do not swap this back to a plain hex without re-deriving this budget.
    */
-  --mote: rgba(255, 207, 158, 0.1);
+  --mote: rgba(255, 207, 158, 0.09);
 
   /*
-   * Dark lava-lamp bubbles read as "ember glow" per spec — a bright warm
-   * orange, unlike the deliberately-dark blob hexes above. Same baked-alpha
-   * budget as the dark mote token: full-alpha rgb(255,158,90) -> Y≈0.4645;
-   * effective blend alpha through the shared 0.4 --ambient-opacity is
-   * 0.4*0.12=0.048 -> Y_composite = 0.048*0.4645 + 0.952*0.005 (surface) =
-   * 0.0271. Contrast vs ink-muted (Y=0.373) = (0.373+.05)/(0.0271+.05) =
-   * 5.49:1 — clears 4.5:1. Do not swap to a plain hex without re-deriving
-   * this budget (a plain hex at 0.4 alpha would crush contrast the same way
-   * the mote comment above describes).
+   * Dark lava-lamp bubbles read as "ember glow" per spec — brightened in
+   * the amp-up pass by *deepening the hue* (rgb 240,120,40, a truer ember
+   * orange, Y_full = 0.3211 vs the old paler 0.4645) so the intrinsic alpha
+   * could rise to 0.2 as the brief asks: effective blend alpha through the
+   * shared 0.55 --ambient-opacity is 0.55*0.2 = 0.11 (2.3x the old 0.048
+   * energy) -> Y_composite = 0.11*0.3211 + 0.89*0.005 (surface) = 0.0398.
+   * Contrast vs ink-muted (Y=0.373) = (0.373+.05)/(0.0398+.05) = 4.71:1 —
+   * clears 4.5:1 inside the ~4.6:1 floor. Do not swap to a plain hex or
+   * brighten the rgb without re-deriving this budget.
+   *
+   * --bubble-rim (orb rim highlight): near-white at very low alpha —
+   * effective 0.55*0.06 = 0.033 of rgb(255,240,220) (Y_full = 0.887) ->
+   * Y_comp = 0.033*0.887 + 0.967*0.005 = 0.0341 -> contrast vs ink-muted
+   * (Y=0.373) = 5.03:1. The rim band sits where the fill gradient has
+   * mostly faded, so the stacked worst case stays ~4.6:1.
    */
-  --bubble: rgba(255, 158, 90, 0.12);
+  --bubble: rgba(240, 120, 40, 0.2);
+  --bubble-rim: rgba(255, 240, 220, 0.06);
 }
 
 [data-theme="dark"][data-mode="focus"] {
@@ -195,41 +229,49 @@
   --ink-muted: oklch(0.72 0.015 235);
 
   /*
-   * Dark aurora — deep indigo / teal / violet. Real WCAG relative luminance:
-   *   #3b3470 (indigo) Y = 0.0456
-   *   #1f5a52 (teal)   Y = 0.0820  <- brightest, tightest margin
-   *   #4a2e63 (violet) Y = 0.0431
-   * Worst case (teal): Y_composite = 0.4*0.0820 + 0.6*0.004 (surface
-   * L=0.16 -> Y≈0.0041) = 0.0353. Contrast vs ink-muted (Y=0.373) =
-   * (0.373+.05)/(0.0353+.05) = 4.96:1 — still clears 4.5:1, but this is the
-   * tightest pair in this file; if teal ever needs to run brighter for
-   * visibility, darken the hex rather than raising --ambient-opacity (which
-   * is shared with Level 3's calmer 0.18 case).
+   * Dark aurora — indigo / teal / violet, pushed to higher chroma in the
+   * amp-up pass (teal slightly darkened in Y to fund the shared opacity
+   * raise). Real WCAG relative luminance:
+   *   #34237a (indigo) Y = 0.0334
+   *   #0e5040 (teal)   Y = 0.0620  <- brightest, tightest margin
+   *   #47156b (violet) Y = 0.0294
+   * Worst case (teal): Y_composite = 0.55*0.0620 + 0.45*0.004 (surface
+   * L=0.16 -> Y≈0.0041) = 0.0359. Contrast vs ink-muted (Y=0.373) =
+   * (0.373+.05)/(0.0359+.05) = 4.92:1 (indigo 6.03:1, violet 6.22:1) — all
+   * clear 4.5:1. If teal ever needs to run brighter for visibility, darken
+   * the hex rather than raising --ambient-opacity (which is shared with
+   * Level 3's calmer 0.18 case).
    */
-  --ambient-1: #3b3470;
-  --ambient-2: #1f5a52;
-  --ambient-3: #4a2e63;
+  --ambient-1: #34237a;
+  --ambient-2: #0e5040;
+  --ambient-3: #47156b;
 
-  /* Pale cool glow, same budget as dark chill's mote above: rgba baked to
-   * ~0.10 intrinsic alpha. Full-alpha rgb(191,224,255) -> Y≈0.715; effective
-   * blend alpha 0.4*0.10=0.04 -> Y_composite = 0.04*0.715+0.96*0.0041=0.0325.
-   * Contrast vs ink-muted (Y=0.373) = (0.373+.05)/(0.0325+.05) = 5.13:1 —
-   * clears 4.5:1 (this is the tighter of the two dark motes, same margin as
-   * the dark aurora teal blob above — don't brighten past this without
-   * re-checking). */
-  --mote: rgba(191, 224, 255, 0.1);
+  /* Pale cool glow, same budget as dark chill's mote above: rgba trimmed to
+   * 0.09 intrinsic alpha in the amp-up pass (was 0.10) so the 0.4->0.55
+   * layer raise still nets +24% visible energy. Full-alpha rgb(191,224,255)
+   * -> Y≈0.716; effective blend alpha 0.55*0.09 = 0.0495 -> Y_composite =
+   * 0.0495*0.716 + 0.9505*0.0041 = 0.0393. Contrast vs ink-muted (Y=0.373)
+   * = (0.373+.05)/(0.0393+.05) = 4.73:1 — clears 4.5:1 (don't brighten past
+   * this without re-checking). */
+  --mote: rgba(191, 224, 255, 0.09);
 
   /*
    * Dark breathing rings — pale sky-blue, same baked-alpha budget style as
    * the dark mote token: full-alpha rgb(150,190,235) -> Y≈0.4931; effective
-   * blend alpha 0.4*0.14=0.056 -> Y_composite = 0.056*0.4931 + 0.944*0.0041
-   * (surface) = 0.0315. Contrast vs ink-muted (Y=0.373) = (0.373+.05)/
-   * (0.0315+.05) = 5.19:1 — clears 4.5:1. This is the tighter of the two
-   * dark ring/bubble pairs in this file (mirrors the dark ambient teal blob's
-   * "tightest pair" note above) — don't raise the intrinsic alpha past 0.14
-   * without re-checking.
+   * blend alpha through the raised layer opacity 0.55*0.14 = 0.077 ->
+   * Y_composite = 0.077*0.4931 + 0.923*0.0041 = 0.0418. Contrast vs
+   * ink-muted (Y=0.373) = (0.373+.05)/(0.0418+.05) = 4.61:1 — clears 4.5:1
+   * and IS the deliberate worst-case pair of the amp-up pass (the ~4.6:1
+   * floor the brief budgets for). Do not raise the intrinsic alpha past
+   * 0.14 or the layer opacity past 0.55 without re-deriving.
+   *
+   * --ring-glow (center pulse): effective 0.55*0.08 = 0.044 of
+   * rgb(140,180,230) (Y_full = 0.4393) -> Y_comp = 0.044*0.4393 +
+   * 0.956*0.0041 = 0.0232 -> contrast vs ink-muted (Y=0.373) = 5.77:1 —
+   * comfortably clear even stacked over a blob center.
    */
   --ring: rgba(150, 190, 235, 0.14);
+  --ring-glow: rgba(140, 180, 230, 0.08);
 }
 
 @theme {
@@ -480,8 +522,10 @@ body * {
  * caps worst-case luminance impact, so overlapping blobs can't stack alpha
  * past that cap — see the --ambient-* token comments for the contrast math.
  */
+/* Raised 0.4 -> 0.55 in the amp-up pass — every ambient, mote, bubble, and
+ * ring token comment above recomputes its contrast math at this cap. */
 :root {
-  --ambient-opacity: 0.4;
+  --ambient-opacity: 0.55;
 }
 
 [data-level="3"] {
@@ -531,7 +575,7 @@ body * {
   max-height: 820px;
   background: radial-gradient(circle at 50% 50%, var(--ambient-1) 0%, transparent 70%);
   animation-name: ambient-drift-1;
-  animation-duration: 75s;
+  animation-duration: 60s;
 }
 
 .ambient-blob-2 {
@@ -543,7 +587,7 @@ body * {
   max-height: 680px;
   background: radial-gradient(circle at 50% 50%, var(--ambient-2) 0%, transparent 70%);
   animation-name: ambient-drift-2;
-  animation-duration: 60s;
+  animation-duration: 45s;
   animation-delay: -18s;
 }
 
@@ -556,30 +600,33 @@ body * {
   max-height: 760px;
   background: radial-gradient(circle at 50% 50%, var(--ambient-3) 0%, transparent 70%);
   animation-name: ambient-drift-3;
-  animation-duration: 45s;
+  animation-duration: 30s;
   animation-delay: -9s;
 }
 
 /* Chill reads slightly livelier than focus — shorter durations only. */
 [data-mode="chill"] .ambient-blob-1 {
-  animation-duration: 52s;
-}
-[data-mode="chill"] .ambient-blob-2 {
   animation-duration: 42s;
 }
-[data-mode="chill"] .ambient-blob-3 {
+[data-mode="chill"] .ambient-blob-2 {
   animation-duration: 34s;
 }
+[data-mode="chill"] .ambient-blob-3 {
+  animation-duration: 26s;
+}
 
+/* Amp-up pass: travel roughly doubled (was ±3-6% / scale 0.93-1.08) and
+ * durations shortened (30/45/60s base, see .ambient-blob-1/2/3) so the wash
+ * visibly evolves within ~15s of watching instead of reading as static. */
 @keyframes ambient-drift-1 {
   0% {
     transform: translate(0%, 0%) scale(1);
   }
   33% {
-    transform: translate(5%, 6%) scale(1.08);
+    transform: translate(9%, 11%) scale(1.14);
   }
   66% {
-    transform: translate(-4%, 3%) scale(0.95);
+    transform: translate(-8%, 5%) scale(0.89);
   }
   100% {
     transform: translate(0%, 0%) scale(1);
@@ -591,10 +638,10 @@ body * {
     transform: translate(0%, 0%) scale(1);
   }
   33% {
-    transform: translate(-6%, 4%) scale(0.93);
+    transform: translate(-11%, 7%) scale(0.87);
   }
   66% {
-    transform: translate(3%, -5%) scale(1.07);
+    transform: translate(6%, -9%) scale(1.13);
   }
   100% {
     transform: translate(0%, 0%) scale(1);
@@ -606,10 +653,10 @@ body * {
     transform: translate(0%, 0%) scale(1);
   }
   33% {
-    transform: translate(4%, -4%) scale(1.06);
+    transform: translate(8%, -8%) scale(1.12);
   }
   66% {
-    transform: translate(-5%, -2%) scale(0.94);
+    transform: translate(-10%, -4%) scale(0.88);
   }
   100% {
     transform: translate(0%, 0%) scale(1);
@@ -676,6 +723,29 @@ body * {
   }
   50% {
     opacity: 0.85;
+  }
+}
+
+/* Hero stars (amp-up pass) — 4 of the 32 STARS entries carry hero:true and
+ * get this extra class: slightly larger (3-4px, set inline like every other
+ * star) with a brighter twinkle peak. Same reduced-motion handling as the
+ * base dot below (the rule targets .starfield-dot, which hero stars also
+ * carry, and `animation: none` kills this keyframe too — the hero override
+ * loses to the reduced-motion rule's later source position + equal
+ * specificity is irrelevant because that rule sets `animation`, shorthand,
+ * inside a media query that simply applies on top). */
+.starfield-dot-hero {
+  background: rgba(255, 255, 255, 0.95);
+  animation-name: starfield-twinkle-hero;
+}
+
+@keyframes starfield-twinkle-hero {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
   }
 }
 
@@ -789,18 +859,92 @@ body * {
 @media (prefers-reduced-motion: reduce) {
   .mote,
   .bubble,
-  .ring {
+  .ring,
+  .ring-glow,
+  .shooting-stars-layer {
     display: none !important;
   }
 }
 
 /*
- * Lava-lamp bubbles (chill-only — shell/BackgroundAmbience.tsx). Six soft
- * round orbs at hardcoded positions/sizes/durations/delays/sway (the
+ * Shooting stars (amp-up pass) — two thin streaks that fire diagonally
+ * across the upper viewport on long loops (14s/23s per-instance inline
+ * durations; each is visible only ~8% of its cycle, so they read as
+ * occasional events, not constant motion). The container div is pre-rotated
+ * inline (a static transform, never animated) so the streak's translateX
+ * composes along the diagonal; the streak animates transform+opacity only.
+ * Dark-theme-only (a light-sky meteor reads as a scratch), both modes.
+ * Travel is in vw inside the fixed overflow-hidden ambience root, so it can
+ * never mint a horizontal scrollbar. Hidden entirely at Level 3 (an
+ * eye-catching streak is exactly what deep lock removes) and under
+ * prefers-reduced-motion (block above).
+ */
+.shooting-stars-layer {
+  display: none;
+}
+
+[data-theme="dark"] .shooting-stars-layer {
+  display: block;
+}
+
+[data-level="3"] .shooting-stars-layer {
+  display: none;
+}
+
+.shooting-star {
+  position: absolute;
+  width: 60vw;
+  height: 2px;
+  transform-origin: left center;
+}
+
+.shooting-star-streak {
+  display: block;
+  width: 150px;
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.55) 80%,
+    rgba(255, 255, 255, 0.95) 100%
+  );
+  opacity: 0;
+  animation-name: shooting-star-fly;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes shooting-star-fly {
+  0% {
+    transform: translateX(-10vw);
+    opacity: 0;
+  }
+  1.5% {
+    opacity: 0.9;
+  }
+  7% {
+    opacity: 0.8;
+  }
+  8% {
+    transform: translateX(48vw);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(48vw);
+    opacity: 0;
+  }
+}
+
+/*
+ * Lava-lamp bubbles (chill-only — shell/BackgroundAmbience.tsx). Eight soft
+ * round orbs (amp-up pass: was six; sizes now 75-220px, durations 20-40s,
+ * sway ±40-60px) at hardcoded positions/sizes/durations/delays/sway (the
  * component's BUBBLES array — never Math.random() at render, same
  * discipline as STARS/MOTES). Each rises from just below the viewport to
- * well above it (bottom:-18% -> translateY(-115vh)) with a gentle
- * horizontal sway and a scale wobble peaking ~1.06 mid-flight, fading in/out
+ * well above it (bottom:-18% -> translateY(-115vh)) with a strong
+ * horizontal sway and a scale wobble peaking ~1.1 mid-flight, fading in/out
  * at the very ends of the keyframe so the bottom-reset is invisible — same
  * seamless-loop trick as mote-drift. transform/opacity only. Gated to
  * `[data-mode="chill"]` via `display` (default none, same pattern as the
@@ -809,6 +953,13 @@ body * {
  * Shares --ambient-opacity with every other layer in this file; chill mode
  * never carries `data-level`, so the L3 fade/pause branch simply never
  * fires here (there is no "chill L3") rather than needing its own opt-out.
+ *
+ * The background is now two stacked radial gradients (amp-up pass): the
+ * outer one is the soft fill (unchanged mechanism), the first/top one is a
+ * thin lighter rim band near the orb's edge (transparent to ~46%, --bubble-
+ * rim peak at 58%, transparent again by 68%) so bubbles read as orbs with a
+ * lit rim rather than smudges. Contrast math for both tokens lives on the
+ * --bubble/--bubble-rim declarations above.
  */
 .bubbles-layer {
   opacity: var(--ambient-opacity);
@@ -820,7 +971,9 @@ body * {
   position: absolute;
   bottom: -18%;
   border-radius: 9999px;
-  background: radial-gradient(circle at 50% 50%, var(--bubble) 0%, transparent 70%);
+  background:
+    radial-gradient(circle at 50% 50%, transparent 46%, var(--bubble-rim) 58%, transparent 68%),
+    radial-gradient(circle at 50% 50%, var(--bubble) 0%, transparent 70%);
   will-change: transform, opacity;
   animation-name: bubble-rise;
   animation-timing-function: ease-in-out;
@@ -838,7 +991,8 @@ body * {
  * returns to 1 at both ends too — so nothing "pops" on wrap. The sway
  * reverses direction twice across the rise (right, then left, then right)
  * for a playful bob rather than a straight diagonal, and scale peaks at
- * ~1.06 around the midpoint for the "wobble" the brief asks for.
+ * ~1.1 around the midpoint (amp-up pass, was ~1.06) for the "wobble" the
+ * brief asks for.
  */
 @keyframes bubble-rise {
   0% {
@@ -849,13 +1003,13 @@ body * {
     opacity: 1;
   }
   22% {
-    transform: translate(calc(var(--bubble-sway) * 1), -25vh) scale(1.02);
+    transform: translate(calc(var(--bubble-sway) * 1), -25vh) scale(1.04);
   }
   45% {
-    transform: translate(calc(var(--bubble-sway) * -0.6), -52vh) scale(1.06);
+    transform: translate(calc(var(--bubble-sway) * -0.6), -52vh) scale(1.1);
   }
   68% {
-    transform: translate(calc(var(--bubble-sway) * 0.8), -80vh) scale(1.03);
+    transform: translate(calc(var(--bubble-sway) * 0.8), -80vh) scale(1.05);
   }
   92% {
     opacity: 1;
@@ -891,7 +1045,9 @@ body * {
   left: 50%;
   top: 50%;
   border-radius: 9999px;
-  border: 2px solid var(--ring);
+  /* 3px (amp-up pass, was 2px) — presence without paint cost: the border is
+   * painted once and GPU-scaled by the keyframe, never animated itself. */
+  border: 3px solid var(--ring);
   animation-name: ring-breathe;
   animation-duration: var(--ring-cycle);
   animation-timing-function: ease-in-out;
@@ -924,11 +1080,11 @@ body * {
   margin-left: -27.5vmin;
   margin-top: -27.5vmin;
   /* Negative delay = "already partway through its cycle" on load, same
-   * trick .ambient-blob-2/3 use above — avoids all three rings starting
-   * perfectly in sync. calc() against --ring-cycle keeps the 1/3 stagger
-   * proportionally correct as the cycle slows per level (see --ring-cycle
-   * comment). At L1's 10s base this is -3.33s ≈ the brief's "+3.3s". */
-  animation-delay: calc(var(--ring-cycle) / -3);
+   * trick .ambient-blob-2/3 use above — avoids the rings starting perfectly
+   * in sync. calc() against --ring-cycle keeps the stagger proportionally
+   * correct as the cycle slows per level (see --ring-cycle comment). Four
+   * rings (amp-up pass) = quarter stagger: -C/4, -C/2, -3C/4. */
+  animation-delay: calc(var(--ring-cycle) / -4);
 }
 
 .ring-3 {
@@ -936,8 +1092,66 @@ body * {
   height: 68vmin;
   margin-left: -34vmin;
   margin-top: -34vmin;
-  /* -6.67s at L1's 10s base ≈ the brief's "+6.6s" — see .ring-2 comment. */
-  animation-delay: calc(var(--ring-cycle) / -3 * 2);
+  animation-delay: calc(var(--ring-cycle) / -2);
+}
+
+.ring-4 {
+  width: 81vmin;
+  height: 81vmin;
+  margin-left: -40.5vmin;
+  margin-top: -40.5vmin;
+  animation-delay: calc(var(--ring-cycle) / -4 * 3);
+}
+
+/*
+ * Soft filled center pulse behind the timer area (amp-up pass) — a large
+ * radial wash that swells on the same level-paced cycle as the rings, giving
+ * the breath a body instead of just outlines. Same centering trick as .ring
+ * (left/top + negative margins, never transform) so scale() stays the only
+ * transform. Peak effective alpha over paper: light focus 0.5 (keyframe) ×
+ * 0.55 (--ambient-opacity) × full-hex ring color ≈ 0.28 → ink-muted contrast
+ * ≈ 5.8:1; dark focus 0.5 × 0.55 × 0.14 (intrinsic rgba) ≈ 0.039 effective
+ * alpha → ≈ 5.3:1. Both clear 4.5:1.
+ */
+.ring-glow {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 70vmin;
+  height: 70vmin;
+  margin-left: -35vmin;
+  margin-top: -35vmin;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--ring) 0%, transparent 65%);
+  opacity: 0;
+  animation: ring-glow-swell var(--ring-cycle) ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+[data-mode="focus"] .ring-glow {
+  display: block;
+}
+
+@media (min-width: 640px) {
+  .ring-glow {
+    left: 35%;
+    top: 45%;
+  }
+}
+
+@keyframes ring-glow-swell {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.08);
+    opacity: 0;
+  }
 }
 
 /*

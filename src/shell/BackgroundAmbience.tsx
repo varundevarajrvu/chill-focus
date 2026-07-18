@@ -22,7 +22,21 @@ import type { CSSProperties } from 'react'
  * is display:none by default, shown under [data-theme="dark"]) and the
  * twinkle-vs-static behavior both live in CSS (see index.css), same
  * "read the theme via a data-attribute, don't re-render" pattern as the
- * ambient blobs above.
+ * ambient blobs above. Four of the 32 stars are "hero" stars (amp-up pass):
+ * slightly larger (3-4px), flagged `hero: true` in STARS, rendered with an
+ * extra `.starfield-dot-hero` class whose brighter twinkle peak lives in CSS.
+ *
+ * Shooting stars (amp-up pass, dark-theme-only, both modes): two streak
+ * elements, each a *pre-rotated* container div (static inline rotate — never
+ * animated, so the animated child's translate composes along the diagonal)
+ * holding a thin gradient-line span with a bright head that translates along
+ * the container's local X axis with opacity in/out on a long loop (14s/23s —
+ * occasional, not constant; each streak is visible ~10% of its cycle). All
+ * constants are hardcoded inline below — same deterministic discipline as
+ * STARS. Gated to [data-theme="dark"] in CSS; hidden at Level 3 and under
+ * prefers-reduced-motion (see index.css comments). Travel is in vw and stays
+ * clipped by this component's overflow-hidden root, so it can never
+ * introduce a horizontal scrollbar.
  *
  * Motes: 12 small drifting dots, FOCUS-ONLY (as of the bubbles/rings pass —
  * chill's small-decoration role is now played by bubbles below), same
@@ -42,21 +56,25 @@ import type { CSSProperties } from 'react'
  * entirely in index.css, same data-attribute-driven pattern as everything
  * else here — this component still renders the same markup in both modes.
  *
- * Bubbles: 6 lava-lamp orbs, CHILL-ONLY, same hardcoded-array discipline.
- * Each rises from bottom:-18% to translateY(-115vh) over a 30-55s loop with
- * a horizontal sway + mid-flight scale wobble (peak ~1.06), fading in/out at
- * the keyframe ends for a seamless loop — see index.css `bubble-rise` for
- * the full easing story and the --bubble token comments for the contrast
- * math. Gated to `[data-mode="chill"]` in CSS, same pattern as motes/stars.
+ * Bubbles: 8 lava-lamp orbs, CHILL-ONLY, same hardcoded-array discipline
+ * (was 6 pre-amp-up). Each rises from bottom:-18% to translateY(-115vh) over
+ * a 20-40s loop with a strong horizontal sway (±40-60px) + mid-flight scale
+ * wobble (peak ~1.1), fading in/out at the keyframe ends for a seamless loop
+ * — see index.css `bubble-rise` for the full easing story and the --bubble /
+ * --bubble-rim token comments for the contrast math (the rim is a lighter
+ * inner radial stop near the edge so orbs read as bubbles, not smudges).
+ * Gated to `[data-mode="chill"]` in CSS, same pattern as motes/stars.
  *
- * Rings: 3 concentric "breathing" circles, FOCUS-ONLY. Unlike bubbles/motes/
- * stars these need no per-instance data (all three share one deterministic
- * layout), so they're rendered as plain static divs — see index.css
- * `.ring-1/.ring-2/.ring-3` for sizing/stagger and `ring-breathe` for the
- * expand-and-fade cycle. Cycle length is level-paced via the `--ring-cycle`
- * custom property (10s/14s/18s at L1/L2/L3) but, unlike every other layer in
- * this file, rings are NOT paused at Level 3 — see the index.css comment on
- * `ring-breathe` for why.
+ * Rings: 4 concentric "breathing" circles, FOCUS-ONLY, plus one soft filled
+ * center-glow pulse (`.ring-glow`) that swells behind the timer area on the
+ * same cycle. Unlike bubbles/motes/stars these need no per-instance data
+ * (all share one deterministic layout), so they're rendered as plain static
+ * divs — see index.css `.ring-1/.ring-2/.ring-3/.ring-4` for sizing/stagger
+ * and `ring-breathe` / `ring-glow-swell` for the expand-and-fade cycles.
+ * Cycle length is level-paced via the `--ring-cycle` custom property
+ * (10s/14s/18s at L1/L2/L3) but, unlike every other layer in this file,
+ * rings (and the glow) are NOT paused at Level 3 — see the index.css comment
+ * on `ring-breathe` for why.
  */
 
 interface Star {
@@ -65,6 +83,8 @@ interface Star {
   size: number
   duration: number
   delay: number
+  /** Hero stars are slightly larger with a brighter twinkle peak (CSS class). */
+  hero?: boolean
 }
 
 const STARS: Star[] = [
@@ -96,6 +116,11 @@ const STARS: Star[] = [
   { top: 63, left: 72, size: 3, duration: 11, delay: 3.3 },
   { top: 32, left: 58, size: 2, duration: 8, delay: 6.8 },
   { top: 78, left: 92, size: 2, duration: 13, delay: 2.5 },
+  // Hero stars (amp-up pass) — larger, brighter twinkle peak.
+  { top: 16, left: 62, size: 4, duration: 9, delay: 2.4, hero: true },
+  { top: 36, left: 30, size: 4, duration: 12, delay: 0.8, hero: true },
+  { top: 8, left: 22, size: 3, duration: 10, delay: 5.6, hero: true },
+  { top: 55, left: 80, size: 4, duration: 14, delay: 3.9, hero: true },
 ]
 
 interface Mote {
@@ -107,19 +132,21 @@ interface Mote {
   sway: number
 }
 
+/* Sizes bumped +1px across the board in the amp-up pass (5-8px, was 4-7) —
+ * motes are the rings' supporting cast now, visible but not the headline. */
 const MOTES: Mote[] = [
-  { left: 6, size: 5, duration: 62, delay: -8, sway: 10 },
-  { left: 18, size: 4, duration: 88, delay: -35, sway: -14 },
-  { left: 30, size: 6, duration: 74, delay: -50, sway: 8 },
-  { left: 42, size: 5, duration: 95, delay: -12, sway: -18 },
-  { left: 54, size: 7, duration: 58, delay: -22, sway: 12 },
-  { left: 66, size: 4, duration: 102, delay: -60, sway: -9 },
-  { left: 78, size: 6, duration: 68, delay: -5, sway: 16 },
-  { left: 90, size: 5, duration: 84, delay: -40, sway: -11 },
-  { left: 12, size: 4, duration: 110, delay: -70, sway: 14 },
-  { left: 60, size: 7, duration: 50, delay: -18, sway: -13 },
-  { left: 36, size: 5, duration: 96, delay: -3, sway: 9 },
-  { left: 84, size: 6, duration: 72, delay: -55, sway: -16 },
+  { left: 6, size: 6, duration: 62, delay: -8, sway: 10 },
+  { left: 18, size: 5, duration: 88, delay: -35, sway: -14 },
+  { left: 30, size: 7, duration: 74, delay: -50, sway: 8 },
+  { left: 42, size: 6, duration: 95, delay: -12, sway: -18 },
+  { left: 54, size: 8, duration: 58, delay: -22, sway: 12 },
+  { left: 66, size: 5, duration: 102, delay: -60, sway: -9 },
+  { left: 78, size: 7, duration: 68, delay: -5, sway: 16 },
+  { left: 90, size: 6, duration: 84, delay: -40, sway: -11 },
+  { left: 12, size: 5, duration: 110, delay: -70, sway: 14 },
+  { left: 60, size: 8, duration: 50, delay: -18, sway: -13 },
+  { left: 36, size: 6, duration: 96, delay: -3, sway: 9 },
+  { left: 84, size: 7, duration: 72, delay: -55, sway: -16 },
 ]
 
 interface Bubble {
@@ -132,12 +159,14 @@ interface Bubble {
 }
 
 const BUBBLES: Bubble[] = [
-  { left: 8, size: 90, duration: 38, delay: -6, sway: 14 },
-  { left: 22, size: 130, duration: 47, delay: -20, sway: -18 },
-  { left: 38, size: 65, duration: 32, delay: -14, sway: 10 },
-  { left: 55, size: 110, duration: 52, delay: -30, sway: -12 },
-  { left: 70, size: 75, duration: 41, delay: -3, sway: 16 },
-  { left: 85, size: 140, duration: 55, delay: -40, sway: -9 },
+  { left: 6, size: 120, duration: 34, delay: -6, sway: 48 },
+  { left: 18, size: 180, duration: 40, delay: -20, sway: -56 },
+  { left: 32, size: 90, duration: 24, delay: -14, sway: 42 },
+  { left: 46, size: 150, duration: 37, delay: -30, sway: -50 },
+  { left: 60, size: 105, duration: 28, delay: -3, sway: 58 },
+  { left: 72, size: 220, duration: 39, delay: -22, sway: -44 },
+  { left: 84, size: 130, duration: 31, delay: -12, sway: 52 },
+  { left: 93, size: 75, duration: 20, delay: -9, sway: -40 },
 ]
 
 export function BackgroundAmbience() {
@@ -153,7 +182,7 @@ export function BackgroundAmbience() {
         {STARS.map((star, i) => (
           <span
             key={i}
-            className="starfield-dot"
+            className={star.hero ? 'starfield-dot starfield-dot-hero' : 'starfield-dot'}
             style={{
               top: `${star.top}%`,
               left: `${star.left}%`,
@@ -203,9 +232,28 @@ export function BackgroundAmbience() {
         ))}
       </div>
       <div className="rings-layer absolute inset-0">
+        <div className="ring-glow" />
         <div className="ring ring-1" />
         <div className="ring ring-2" />
         <div className="ring ring-3" />
+        <div className="ring ring-4" />
+      </div>
+      <div className="shooting-stars-layer absolute inset-0">
+        {/* Pre-rotated containers; the child streak animates translateX along
+            the rotated axis + opacity only. Deterministic constants inline —
+            no Math.random() at render, same as every other layer here. */}
+        <div className="shooting-star" style={{ top: '8%', left: '3%', transform: 'rotate(16deg)' }}>
+          <span
+            className="shooting-star-streak"
+            style={{ animationDuration: '14s', animationDelay: '2s' }}
+          />
+        </div>
+        <div className="shooting-star" style={{ top: '15%', left: '34%', transform: 'rotate(26deg)' }}>
+          <span
+            className="shooting-star-streak"
+            style={{ animationDuration: '23s', animationDelay: '9s' }}
+          />
+        </div>
       </div>
     </div>
   )
