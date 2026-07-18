@@ -390,6 +390,27 @@ html {
 }
 
 /*
+ * ScrollRocket's flame — idle opacity flicker layered underneath the
+ * JS-driven scaleY flare (see ScrollRocket.tsx) so the flame is never
+ * perfectly static even when scroll velocity is flat. The component itself
+ * renders nothing under prefers-reduced-motion, so no reduced-motion
+ * override is needed here, same as the exhaust-fade keyframe above.
+ */
+@keyframes scroll-rocket-flame-flicker {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.scroll-rocket-flame-flicker {
+  animation: scroll-rocket-flame-flicker 0.55s ease-in-out infinite;
+}
+
+/*
  * Focus-level chrome (Section 5.2 table). `data-level` is only ever set on
  * <html> while mode === 'focus' (see AppShell), so these selectors don't
  * need an extra [data-mode="focus"] scope — chill mode never carries the
