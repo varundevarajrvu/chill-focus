@@ -75,6 +75,44 @@ import type { CSSProperties } from 'react'
  * (10s/14s/18s at L1/L2/L3) but, unlike every other layer in this file,
  * rings (and the glow) are NOT paused at Level 3 — see the index.css comment
  * on `ring-breathe` for why.
+ *
+ * Light-theme-only wow layers (amp-up pass — "dark looks too good, light
+ * looks dull"). Dark theme is completely untouched by these three; each is
+ * gated in CSS to `[data-theme="light"]` AND the right `[data-mode]`, same
+ * hide-by-default-then-show `display` pattern as every other gated layer
+ * above, just keyed off theme+mode together instead of either alone:
+ *
+ * - Paper clouds (CLOUDS, light chill only): 3 flat, rounded cloud
+ *   silhouettes (each a small cluster of overlapping SVG ellipses/a rounded
+ *   rect — a "paper cutout" look, not a soft blob) drifting the full width of
+ *   the viewport at three heights/speeds. Hardcoded array, same discipline as
+ *   STARS/MOTES/BUBBLES. Fill is a warm cream just one step off the paper
+ *   background (contrast math lives on `.paper-cloud` in index.css) — clouds
+ *   are "the risk" per the brief (a shape close in luminance to its own
+ *   background must still not crush contrast for any text that scrolls
+ *   behind it), so that token was chosen deliberately close to paper.
+ * - Paper plane (PLANE_DURATION/PLANE_DELAY, light chill only): the daytime
+ *   cousin of dark's shooting stars — same pre-rotated-container +
+ *   animated-child-translate pattern, one small SVG paper-airplane glyph
+ *   gliding diagonally across the upper viewport on a long, mostly-invisible
+ *   loop (visible ~15% of its cycle).
+ * - Light beams (BEAMS, light focus only): 3 wide, very-soft-edged
+ *   translucent bands (linear-gradient, pre-rotated ~18-25deg like the
+ *   clouds/plane's static-rotation trick) that drift laterally within a
+ *   modest range while breathing opacity on long, staggered cycles —
+ *   "sunlight through a window". These render *alongside* the existing
+ *   rings/motes rather than replacing them (rings/motes stay the "focus
+ *   ambient" layer in both themes; beams are the light-only bonus on top).
+ *
+ * All three share `--ambient-opacity` on their layer wrapper (same mechanism
+ * as every other layer here) and pause at Level 3 the same way blobs/motes
+ * do — clouds/plane can never actually observe Level 3 in practice (chill
+ * never carries `data-level`, exactly like bubbles above), so that pause rule
+ * is written for consistency/future-proofing rather than because it's
+ * reachable today; light beams are focus-only so their Level 3 pause *is*
+ * live. All three are hidden outright (not just paused) under
+ * prefers-reduced-motion, added to the same `!important` block the
+ * mote/bubble/ring/shooting-star hide-list already uses.
  */
 
 interface Star {
@@ -169,6 +207,39 @@ const BUBBLES: Bubble[] = [
   { left: 93, size: 75, duration: 20, delay: -9, sway: -40 },
 ]
 
+interface Cloud {
+  top: number
+  /** Rendered width in px — silhouette scales proportionally via viewBox. */
+  width: number
+  duration: number
+  delay: number
+}
+
+// Light chill only (see index.css `.paper-cloud` gating). Three heights/
+// speeds per the brief; negative delays start each cloud partway across its
+// own loop so all three don't drift in lockstep from the left edge.
+const CLOUDS: Cloud[] = [
+  { top: 12, width: 200, duration: 95, delay: -20 },
+  { top: 28, width: 150, duration: 120, delay: -60 },
+  { top: 46, width: 180, duration: 78, delay: -8 },
+]
+
+interface LightBeam {
+  top: number
+  left: number
+  rotate: number
+  duration: number
+  delay: number
+}
+
+// Light focus only (see index.css `.light-beam` gating). Long, staggered
+// cycles so the three never breathe/drift in sync.
+const BEAMS: LightBeam[] = [
+  { top: -10, left: -25, rotate: 20, duration: 42, delay: -6 },
+  { top: 18, left: -15, rotate: 24, duration: 55, delay: -30 },
+  { top: 48, left: -30, rotate: 18, duration: 38, delay: -18 },
+]
+
 export function BackgroundAmbience() {
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
@@ -254,6 +325,70 @@ export function BackgroundAmbience() {
             style={{ animationDuration: '23s', animationDelay: '9s' }}
           />
         </div>
+      </div>
+      <div className="paper-clouds-layer absolute inset-0">
+        {CLOUDS.map((cloud, i) => (
+          <span
+            key={i}
+            className="paper-cloud absolute"
+            style={{
+              top: `${cloud.top}%`,
+              width: `${cloud.width}px`,
+              animationDuration: `${cloud.duration}s`,
+              animationDelay: `${cloud.delay}s`,
+            }}
+          >
+            <svg viewBox="0 0 120 50" className="block h-auto w-full" aria-hidden="true">
+              <rect x="14" y="28" width="92" height="18" rx="9" fill="#ecdfc4" />
+              <ellipse cx="30" cy="32" rx="24" ry="15" fill="#ecdfc4" />
+              <ellipse cx="62" cy="21" rx="30" ry="19" fill="#ecdfc4" />
+              <ellipse cx="92" cy="31" rx="22" ry="14" fill="#ecdfc4" />
+            </svg>
+          </span>
+        ))}
+      </div>
+      <div className="paper-plane-layer absolute inset-0">
+        {/* Pre-rotated container (static inline rotate, never animated) + an
+            animated child that translates along the local X axis with
+            opacity in/out — the same mechanism the dark shooting-stars use
+            above, standing in here as the light/chill "daytime meteor". */}
+        <div className="paper-plane" style={{ top: '9%', left: '-8%', transform: 'rotate(12deg)' }}>
+          <span className="paper-plane-glider" style={{ animationDuration: '18s', animationDelay: '5s' }}>
+            <svg viewBox="0 0 34 20" className="block h-5 w-8" fill="none" aria-hidden="true">
+              <path
+                d="M2 10 L32 2 L18 10 L32 18 Z"
+                fill="var(--color-accent-soft)"
+                stroke="var(--color-ink)"
+                strokeOpacity="0.15"
+                strokeWidth="0.6"
+              />
+              <path d="M2 10 L18 10 L14 14.5 Z" fill="var(--color-accent)" opacity="0.55" />
+            </svg>
+          </span>
+        </div>
+      </div>
+      <div className="light-beams-layer absolute inset-0">
+        {/* Same pre-rotated-container + animated-child split as the shooting
+            stars / paper plane above: the outer div's rotate is a static
+            inline transform (never animated) so the inner band's own
+            animated transform (translateX only) composes along the rotated
+            axis instead of the two fighting over the `transform` property. */}
+        {BEAMS.map((beam, i) => (
+          <div
+            key={i}
+            className="light-beam-rotor"
+            style={{
+              top: `${beam.top}%`,
+              left: `${beam.left}%`,
+              transform: `rotate(${beam.rotate}deg)`,
+            }}
+          >
+            <span
+              className="light-beam"
+              style={{ animationDuration: `${beam.duration}s`, animationDelay: `${beam.delay}s` }}
+            />
+          </div>
+        ))}
       </div>
     </div>
   )

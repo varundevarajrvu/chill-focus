@@ -5,6 +5,7 @@ import { useThemeStore } from '../stores/themeStore'
 import { useTabTitle } from '../hooks/useTabTitle'
 import { AppreciationOverlay } from '../features/appreciation/AppreciationOverlay'
 import { BackgroundAmbience } from './BackgroundAmbience'
+import { FocusScrollCompanion } from './FocusScrollCompanion'
 import { ModeHeader } from './ModeHeader'
 import { ModeStage } from './ModeStage'
 // Side-effect import: activates the module-level audio manager's store
@@ -44,6 +45,7 @@ export function AppShell() {
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col">
       <BackgroundAmbience />
+      <FocusScrollCompanion />
       <ModeHeader />
       {/* Focus stays vertically centered (its content is a fixed-height hero +
           rail, shorter than the viewport on most screens). Chill's new

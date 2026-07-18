@@ -411,6 +411,118 @@ html {
 }
 
 /*
+ * ScrollRocket's idle hover-bob (amp-up pass) — a slow, small sine-ish
+ * translateY on the wrapper directly inside the JS-driven rotate/squash
+ * motion.div (see ScrollRocket.tsx), so it composes with every other
+ * transform rather than replacing them. Runs continuously rather than being
+ * explicitly gated to "at rest": the position spring's own travel across the
+ * S-curve is an order of magnitude bigger than this ±5px wobble, so in
+ * practice the bob only becomes visible once scrolling stops — no JS gate
+ * needed. The component itself renders nothing under prefers-reduced-motion
+ * (see ScrollRocket.tsx), so no reduced-motion override is needed here,
+ * same as the exhaust/flame-flicker keyframes above.
+ */
+@keyframes scroll-rocket-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-5px);
+  }
+  75% {
+    transform: translateY(5px);
+  }
+}
+
+.scroll-rocket-idle-bob {
+  animation: scroll-rocket-bob 3.6s ease-in-out infinite;
+}
+
+/*
+ * ScrollRocket's sparkles (amp-up pass) — each of the 5 hardcoded SPARKLES
+ * dots loops this emit-fade continuously; visibility of the whole group is
+ * gated in JS (sparkleOpacity, a spring off |velocity| — see ScrollRocket.tsx)
+ * rather than in CSS, so the dots themselves never need their own
+ * reduced-motion guard beyond the component's existing "renders nothing"
+ * bail-out.
+ */
+@keyframes scroll-rocket-sparkle {
+  0% {
+    transform: translate(0, 0) scale(0.3);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--sparkle-dx, 0px), -10px) scale(1);
+    opacity: 0;
+  }
+}
+
+.scroll-rocket-sparkle {
+  position: absolute;
+  border-radius: 9999px;
+  background: var(--color-accent-soft);
+  box-shadow: 0 0 4px var(--color-accent);
+  animation-name: scroll-rocket-sparkle;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/*
+ * FocusScrollCompanion's lantern-orb (amp-up pass, focus-only) — idle
+ * breathing pulse (scale on the core disc, opacity swell on the outer halo),
+ * both on a fixed 7s cycle (see FocusScrollCompanion.tsx for why this doesn't
+ * ride --ring-cycle). The component itself renders nothing under
+ * prefers-reduced-motion or outside focus mode, so no extra guard is needed
+ * here, same pattern as ScrollRocket's own CSS-only decorations.
+ */
+@keyframes focus-lantern-pulse-core {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.focus-lantern-core {
+  animation: focus-lantern-pulse-core 7s ease-in-out infinite;
+}
+
+@keyframes focus-lantern-pulse-halo {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+.focus-lantern-halo {
+  background: radial-gradient(circle, var(--color-accent-soft) 0%, transparent 72%);
+  animation: focus-lantern-pulse-halo 7s ease-in-out infinite;
+}
+
+/*
+ * Faint dotted vertical trajectory hint — the one thing the brief allows in
+ * focus that it doesn't in chill (a visible guide reads calm/intentional
+ * here, cluttered next to the rocket's wavy S-curve). Purely static: no
+ * animation, so no reduced-motion handling needed beyond the component
+ * itself rendering nothing in that case.
+ */
+.focus-lantern-trail {
+  width: 0;
+  border-left: 2px dotted var(--color-ink-muted);
+  opacity: 0.18;
+}
+
+/*
  * Focus-level chrome (Section 5.2 table). `data-level` is only ever set on
  * <html> while mode === 'focus' (see AppShell), so these selectors don't
  * need an extra [data-mode="focus"] scope — chill mode never carries the
@@ -882,7 +994,10 @@ body * {
   .bubble,
   .ring,
   .ring-glow,
-  .shooting-stars-layer {
+  .shooting-stars-layer,
+  .paper-cloud,
+  .paper-plane,
+  .light-beam-rotor {
     display: none !important;
   }
 }
@@ -956,6 +1071,232 @@ body * {
     transform: translateX(48vw);
     opacity: 0;
   }
+}
+
+/*
+ * Paper clouds (amp-up pass, LIGHT CHILL ONLY — shell/BackgroundAmbience.tsx).
+ * Three flat, rounded "paper cutout" cloud silhouettes (SVG ellipses/rect,
+ * no filter:blur) drifting the full width of the viewport at three fixed
+ * heights/speeds (component's CLOUDS array — same never-Math.random()
+ * discipline as STARS/MOTES/BUBBLES). Gated to `[data-theme="light"]
+ * [data-mode="chill"]` via `display`, same hide-by-default pattern as every
+ * other gated layer in this file, just keyed off theme+mode together.
+ *
+ * Contrast ("clouds are the risk" per the brief): fill #ecdfc4 is a warm
+ * tan deliberately a couple steps off the paper background (#faf9f4) — dark
+ * enough to actually read as a cloud shape rather than disappearing into the
+ * paper, while staying inside budget. Real WCAG sRGB relative luminance:
+ * Y_full(#ecdfc4) = 0.746 vs paper Y = 0.946. Composited through the shared
+ * --ambient-opacity (0.55): Y_composite = 0.55*0.746 + 0.45*0.946 = 0.836.
+ * Contrast vs ink-muted text (chill light, Y≈0.104) = (0.836+.05)/(0.104+.05)
+ * = 5.75:1 — clears 4.5:1 with real margin (inside this file's established
+ * ~4.6:1 floor for deliberately-spent headroom). Do not darken this hex
+ * further without re-deriving.
+ */
+.paper-clouds-layer {
+  display: none;
+  opacity: var(--ambient-opacity);
+  transition: opacity 400ms ease-out;
+}
+
+[data-theme="light"][data-mode="chill"] .paper-clouds-layer {
+  display: block;
+}
+
+.paper-cloud {
+  position: absolute;
+  left: 0;
+  animation-name: paper-cloud-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+/*
+ * Start well off-screen left (-40vw), travel to well off-screen right
+ * (110vw) — both endpoints are clipped by BackgroundAmbience's own
+ * overflow-hidden root, so the instant reset on loop restart is invisible
+ * ("start off-screen left -> exit right -> loop" per the brief). A gentle
+ * vertical bob (±6px) is layered on top via the intermediate stops, quartered
+ * evenly across the horizontal travel so it still reads as ~linear drift.
+ */
+@keyframes paper-cloud-drift {
+  0% {
+    transform: translate(-40vw, 0);
+  }
+  25% {
+    transform: translate(-2.5vw, -6px);
+  }
+  50% {
+    transform: translate(35vw, 0);
+  }
+  75% {
+    transform: translate(72.5vw, 6px);
+  }
+  100% {
+    transform: translate(110vw, 0);
+  }
+}
+
+/* Written for consistency with every other layer's Level 3 rule, though it
+ * can never actually fire in practice: chill mode never carries `data-level`
+ * (same reasoning bubbles above rely on), so this only matters if that
+ * invariant ever changes. */
+[data-level="3"] .paper-cloud {
+  animation-play-state: paused;
+}
+
+/*
+ * Paper plane (amp-up pass, LIGHT CHILL ONLY) — the daytime cousin of dark's
+ * shooting stars, same pre-rotated-container (`.paper-plane`, static inline
+ * rotate) + animated-child (`.paper-plane-glider`, transform+opacity only)
+ * pattern. Visible ~15% of its ~18-23s cycle, the rest spent off-screen
+ * holding invisible. A small SVG paper-airplane glyph in the existing accent
+ * tokens (already contrast-vetted elsewhere in the app), not new colors, so
+ * no separate contrast derivation is needed here.
+ */
+.paper-plane-layer {
+  display: none;
+  opacity: var(--ambient-opacity);
+  transition: opacity 400ms ease-out;
+}
+
+[data-theme="light"][data-mode="chill"] .paper-plane-layer {
+  display: block;
+}
+
+.paper-plane {
+  position: absolute;
+  width: 70vw;
+  height: 40px;
+  transform-origin: left center;
+}
+
+.paper-plane-glider {
+  display: block;
+  opacity: 0;
+  animation-name: paper-plane-fly;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes paper-plane-fly {
+  0% {
+    transform: translateX(-10vw) rotate(0deg);
+    opacity: 0;
+  }
+  4% {
+    opacity: 0.9;
+  }
+  13% {
+    opacity: 0.85;
+  }
+  15% {
+    transform: translateX(40vw) rotate(-4deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(40vw) rotate(-4deg);
+    opacity: 0;
+  }
+}
+
+/* Same "written for consistency, inert in practice" note as
+ * `[data-level="3"] .paper-cloud` above. */
+[data-level="3"] .paper-plane-glider {
+  animation-play-state: paused;
+}
+
+/*
+ * Light beams (amp-up pass, LIGHT FOCUS ONLY) — three wide, very-soft-edged
+ * translucent bands, "sunlight through a window". Same pre-rotated-container
+ * (`.light-beam-rotor`, static inline rotate ~18-25deg) + animated-child
+ * (`.light-beam`, transform+opacity only) split the plane/shooting-stars use,
+ * for the same reason: a single element can't hold both a static rotate and
+ * an animated transform without one clobbering the other. These COEXIST with
+ * the rings/motes layers (rings/motes stay the shared focus-ambient layer in
+ * both themes; beams are the light-only bonus on top), gated to
+ * `[data-theme="light"][data-mode="focus"]`.
+ *
+ * Contrast: gradient peak color rgb(175,205,235) -> real WCAG Y_full = 0.588.
+ * Effective alpha stacks three multipliers: the layer wrapper's
+ * --ambient-opacity (0.55), the keyframe's own peak opacity (0.85, see
+ * light-beam-glide below), and the gradient's intrinsic peak alpha (0.6) ->
+ * 0.55*0.85*0.6 = 0.2805. Composited over paper (Y=0.946): Y_composite =
+ * 0.2805*0.588 + 0.7195*0.946 = 0.846. Contrast vs ink-muted text (focus
+ * light, Y≈0.097) = (0.846+.05)/(0.097+.05) = 6.09:1 — clears 4.5:1 with real
+ * margin even at this brighter setting (chosen over a fainter one because the
+ * headroom allowed it and the brief asks for a visible "wow" layer, not a
+ * barely-there one). Note the gradient only reaches this peak alpha along a
+ * thin central seam (it fades to transparent within the same 50% of the
+ * band's own height on both sides), so the *visible* band reads softer than
+ * this worst-case single-pixel number implies. Do not raise the intrinsic
+ * alpha past 0.6 or the keyframe peak past 0.85 without re-deriving.
+ */
+.light-beams-layer {
+  display: none;
+  opacity: var(--ambient-opacity);
+  transition: opacity 400ms ease-out;
+}
+
+[data-theme="light"][data-mode="focus"] .light-beams-layer {
+  display: block;
+}
+
+.light-beam-rotor {
+  position: absolute;
+  width: 150vw;
+  height: 18vh;
+  transform-origin: left center;
+}
+
+.light-beam {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(175, 205, 235, 0.6) 50%,
+    transparent 100%
+  );
+  animation-name: light-beam-glide;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/* Gentle lateral drift within a modest range (not a full traversal — beams
+ * stay roughly in place, unlike the clouds/plane) with opacity breathing on
+ * the same cycle, seamless loop (0%/100% share transform+opacity, so the
+ * restart is invisible even without an off-screen wrap). */
+@keyframes light-beam-glide {
+  0% {
+    transform: translateX(-6vw);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateX(6vw);
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(-6vw);
+    opacity: 0;
+  }
+}
+
+/* Real, reachable rule (unlike the cloud/plane Level 3 notes above) — focus
+ * mode does carry `data-level`, so this is the live "beams pause at Level 3,
+ * rings keep breathing" behavior the brief asks for. */
+[data-level="3"] .light-beam {
+  animation-play-state: paused;
 }
 
 /*
