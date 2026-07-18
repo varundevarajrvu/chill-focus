@@ -24,19 +24,39 @@ import type { CSSProperties } from 'react'
  * "read the theme via a data-attribute, don't re-render" pattern as the
  * ambient blobs above.
  *
- * Motes: 12 small drifting dots, both themes/modes, same hardcoded-array
- * discipline as STARS (no Math.random() at render). Each drifts straight up
- * from bottom:-5% to top:-5% (translateY(-110vh)) with a gentle per-dot
- * horizontal sway (--mote-sway custom property, transform-only) over a
- * 50-110s loop, fading in/out at the very ends of the keyframe so the
- * bottom-reset is invisible. Tint comes from --mote (index.css), which
- * shares the blobs' --ambient-opacity variable and L3 pause rule (`.mote` /
- * `[data-level="3"] .mote`, mirroring `.ambient-blob`) — "same mechanism"
- * as the aurora blobs, just a separate layer so the dark-theme tokens can
- * bake in their own much-lower intrinsic alpha (see index.css comment) to
- * keep a *pale* glow from ever tipping text-on-paper contrast under 4.5:1.
- * Hidden outright (not just paused) under prefers-reduced-motion — see
- * index.css — since a frozen random dot reads as dirt, not decoration.
+ * Motes: 12 small drifting dots, FOCUS-ONLY (as of the bubbles/rings pass —
+ * chill's small-decoration role is now played by bubbles below), same
+ * hardcoded-array discipline as STARS (no Math.random() at render). Each
+ * drifts straight up from bottom:-5% to top:-5% (translateY(-110vh)) with a
+ * gentle per-dot horizontal sway (--mote-sway custom property,
+ * transform-only) over a 50-110s loop, fading in/out at the very ends of
+ * the keyframe so the bottom-reset is invisible. Tint comes from --mote
+ * (index.css), which shares the blobs' --ambient-opacity variable and L3
+ * pause rule (`.mote` / `[data-level="3"] .mote`, mirroring `.ambient-blob`)
+ * — "same mechanism" as the aurora blobs, just a separate layer so the
+ * dark-theme tokens can bake in their own much-lower intrinsic alpha (see
+ * index.css comment) to keep a *pale* glow from ever tipping text-on-paper
+ * contrast under 4.5:1. Hidden outright (not just paused) under
+ * prefers-reduced-motion — see index.css — since a frozen random dot reads
+ * as dirt, not decoration. Mode gating (`[data-mode="focus"] .mote`) lives
+ * entirely in index.css, same data-attribute-driven pattern as everything
+ * else here — this component still renders the same markup in both modes.
+ *
+ * Bubbles: 6 lava-lamp orbs, CHILL-ONLY, same hardcoded-array discipline.
+ * Each rises from bottom:-18% to translateY(-115vh) over a 30-55s loop with
+ * a horizontal sway + mid-flight scale wobble (peak ~1.06), fading in/out at
+ * the keyframe ends for a seamless loop — see index.css `bubble-rise` for
+ * the full easing story and the --bubble token comments for the contrast
+ * math. Gated to `[data-mode="chill"]` in CSS, same pattern as motes/stars.
+ *
+ * Rings: 3 concentric "breathing" circles, FOCUS-ONLY. Unlike bubbles/motes/
+ * stars these need no per-instance data (all three share one deterministic
+ * layout), so they're rendered as plain static divs — see index.css
+ * `.ring-1/.ring-2/.ring-3` for sizing/stagger and `ring-breathe` for the
+ * expand-and-fade cycle. Cycle length is level-paced via the `--ring-cycle`
+ * custom property (10s/14s/18s at L1/L2/L3) but, unlike every other layer in
+ * this file, rings are NOT paused at Level 3 — see the index.css comment on
+ * `ring-breathe` for why.
  */
 
 interface Star {
@@ -102,6 +122,24 @@ const MOTES: Mote[] = [
   { left: 84, size: 6, duration: 72, delay: -55, sway: -16 },
 ]
 
+interface Bubble {
+  left: number
+  size: number
+  duration: number
+  delay: number
+  /** Horizontal sway amplitude in px — sign sets which way it leans first. */
+  sway: number
+}
+
+const BUBBLES: Bubble[] = [
+  { left: 8, size: 90, duration: 38, delay: -6, sway: 14 },
+  { left: 22, size: 130, duration: 47, delay: -20, sway: -18 },
+  { left: 38, size: 65, duration: 32, delay: -14, sway: 10 },
+  { left: 55, size: 110, duration: 52, delay: -30, sway: -12 },
+  { left: 70, size: 75, duration: 41, delay: -3, sway: 16 },
+  { left: 85, size: 140, duration: 55, delay: -40, sway: -9 },
+]
+
 export function BackgroundAmbience() {
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
@@ -145,6 +183,29 @@ export function BackgroundAmbience() {
             }
           />
         ))}
+      </div>
+      <div className="bubbles-layer absolute inset-0">
+        {BUBBLES.map((bubble, i) => (
+          <span
+            key={i}
+            className="bubble"
+            style={
+              {
+                left: `${bubble.left}%`,
+                width: `${bubble.size}px`,
+                height: `${bubble.size}px`,
+                animationDuration: `${bubble.duration}s`,
+                animationDelay: `${bubble.delay}s`,
+                '--bubble-sway': `${bubble.sway}px`,
+              } as CSSProperties
+            }
+          />
+        ))}
+      </div>
+      <div className="rings-layer absolute inset-0">
+        <div className="ring ring-1" />
+        <div className="ring ring-2" />
+        <div className="ring ring-3" />
       </div>
     </div>
   )

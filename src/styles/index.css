@@ -41,6 +41,19 @@
    * 4.5:1 with room, so light mode needs no extra attenuation.
    */
   --mote: #f7cf9f;
+
+  /*
+   * Lava-lamp bubbles (BackgroundAmbience.tsx, chill-only) — soft peach/amber
+   * tint, plain hex (full alpha) composited through the same shared
+   * --ambient-opacity (0.4) the blobs/motes use: Y_full(#ffcf9e) = 0.6835 ->
+   * Y_composite = 0.4*0.6835 + 0.6*0.946 (paper) = 0.8411. Contrast vs
+   * ink-muted text (chill light, Y≈0.104) = (0.8411+.05)/(0.104+.05) =
+   * 5.79:1 — clears 4.5:1 with the same order of margin as the mote token
+   * above, even though bubbles render much larger (60-140px) than motes,
+   * because the radial-gradient's own falloff means only the bubble's exact
+   * center pixel ever reaches this worst case.
+   */
+  --bubble: #ffcf9e;
 }
 
 [data-mode="focus"] {
@@ -63,6 +76,19 @@
    * #cfe3f2 -> Y≈0.746; composite at 0.4 opacity vs paper (0.946) = 0.866;
    * contrast vs focus light ink-muted (Y≈0.097) = 6.22:1. */
   --mote: #cfe3f2;
+
+  /*
+   * Breathing rings (BackgroundAmbience.tsx, focus-only) — cool sky-blue
+   * stroke tint, plain hex composited through the same shared
+   * --ambient-opacity (0.4): Y_full(#7fb2de) = 0.4163 -> Y_composite =
+   * 0.4*0.4163 + 0.6*0.946 (paper) = 0.7341. Contrast vs ink-muted text
+   * (focus light, Y≈0.097) = (0.7341+.05)/(0.097+.05) = 5.33:1 — clears
+   * 4.5:1. Rings are a thin 2px stroke rather than a filled disk, so actual
+   * on-screen coverage of this worst-case pixel is far smaller than a blob's,
+   * but the WCAG math is evaluated at the stroke's own color regardless of
+   * area, and it already clears with room.
+   */
+  --ring: #7fb2de;
 }
 
 /*
@@ -139,6 +165,19 @@
    * back to a plain hex without re-deriving this budget.
    */
   --mote: rgba(255, 207, 158, 0.1);
+
+  /*
+   * Dark lava-lamp bubbles read as "ember glow" per spec — a bright warm
+   * orange, unlike the deliberately-dark blob hexes above. Same baked-alpha
+   * budget as the dark mote token: full-alpha rgb(255,158,90) -> Y≈0.4645;
+   * effective blend alpha through the shared 0.4 --ambient-opacity is
+   * 0.4*0.12=0.048 -> Y_composite = 0.048*0.4645 + 0.952*0.005 (surface) =
+   * 0.0271. Contrast vs ink-muted (Y=0.373) = (0.373+.05)/(0.0271+.05) =
+   * 5.49:1 — clears 4.5:1. Do not swap to a plain hex without re-deriving
+   * this budget (a plain hex at 0.4 alpha would crush contrast the same way
+   * the mote comment above describes).
+   */
+  --bubble: rgba(255, 158, 90, 0.12);
 }
 
 [data-theme="dark"][data-mode="focus"] {
@@ -179,6 +218,18 @@
    * the dark aurora teal blob above — don't brighten past this without
    * re-checking). */
   --mote: rgba(191, 224, 255, 0.1);
+
+  /*
+   * Dark breathing rings — pale sky-blue, same baked-alpha budget style as
+   * the dark mote token: full-alpha rgb(150,190,235) -> Y≈0.4931; effective
+   * blend alpha 0.4*0.14=0.056 -> Y_composite = 0.056*0.4931 + 0.944*0.0041
+   * (surface) = 0.0315. Contrast vs ink-muted (Y=0.373) = (0.373+.05)/
+   * (0.0315+.05) = 5.19:1 — clears 4.5:1. This is the tighter of the two
+   * dark ring/bubble pairs in this file (mirrors the dark ambient teal blob's
+   * "tightest pair" note above) — don't raise the intrinsic alpha past 0.14
+   * without re-checking.
+   */
+  --ring: rgba(150, 190, 235, 0.14);
 }
 
 @theme {
@@ -437,6 +488,27 @@ body * {
   --ambient-opacity: 0.18;
 }
 
+/*
+ * Breathing-ring cycle length (Feature: focus-only rings, below). Pacing
+ * mirrors the levels table's "slower at higher levels" rule already applied
+ * to .mode-stage's transition-duration: L1 = 10s base, L2 ≈ 1.4x, L3 ≈ 1.8x.
+ * Ring stagger offsets are expressed as fractions of this one variable
+ * (calc(var(--ring-cycle) / 3) etc., see .ring-2/.ring-3 below) so the
+ * "always one ring breathing" stagger stays proportionally correct at every
+ * level instead of drifting out of alignment as the cycle slows.
+ */
+:root {
+  --ring-cycle: 10s;
+}
+
+[data-level="2"] {
+  --ring-cycle: 14s;
+}
+
+[data-level="3"] {
+  --ring-cycle: 18s;
+}
+
 .ambient-layer {
   opacity: var(--ambient-opacity);
   transition: opacity 400ms ease-out;
@@ -619,7 +691,15 @@ body * {
 }
 
 /*
- * Drifting motes (Feature 4, both themes/modes — shell/BackgroundAmbience.tsx).
+ * Drifting motes (Feature 4 — shell/BackgroundAmbience.tsx). Focus-only as
+ * of the lava-lamp-bubbles/breathing-rings pass: chill now has its own
+ * bubbles layer (below) that plays the "small drifting decoration" role
+ * instead, so motes are gated to `[data-mode="focus"]` via `display` — same
+ * hide-by-default-then-show pattern the starfield above uses for
+ * `[data-theme="dark"]`, just keyed off mode instead of theme. The
+ * machinery (MOTES array, mote-drift keyframe, --mote tokens, L3 pause rule)
+ * is otherwise untouched.
+ *
  * A fixed set of small (4-7px) soft dots at hardcoded positions/sizes/
  * durations/delays (the component's MOTES array — never Math.random() at
  * render). Each is a radial-gradient soft-falloff circle (no filter:blur,
@@ -636,6 +716,7 @@ body * {
 }
 
 .mote {
+  display: none;
   position: absolute;
   border-radius: 9999px;
   background: radial-gradient(circle at 50% 50%, var(--mote) 0%, transparent 70%);
@@ -643,6 +724,10 @@ body * {
   animation-name: mote-drift;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
+}
+
+[data-mode="focus"] .mote {
+  display: block;
 }
 
 /*
@@ -693,10 +778,193 @@ body * {
 /* Hidden outright, not just paused — a frozen dot at a random mid-drift
  * position reads as a smudge/dirt on the paper rather than decoration, so
  * (unlike the blobs, which stay as static gradients under reduced motion)
- * motes are removed entirely. */
+ * motes are removed entirely. Bubbles and rings (below) are pure motion too
+ * — a frozen lava-lamp bubble mid-rise or a frozen ring mid-breath reads the
+ * same way — so they're hidden here alongside motes rather than paused.
+ * `!important` is required here (not just a plain `display: none`): the
+ * mode-gating rules below (`[data-mode="chill"] .bubble { display: block }`
+ * etc.) have higher specificity than a bare `.mote`/`.bubble`/`.ring`
+ * selector, so without it a reduced-motion user in the matching mode would
+ * still see the bare rule lose the cascade and the layer render anyway. */
 @media (prefers-reduced-motion: reduce) {
-  .mote {
-    display: none;
+  .mote,
+  .bubble,
+  .ring {
+    display: none !important;
+  }
+}
+
+/*
+ * Lava-lamp bubbles (chill-only — shell/BackgroundAmbience.tsx). Six soft
+ * round orbs at hardcoded positions/sizes/durations/delays/sway (the
+ * component's BUBBLES array — never Math.random() at render, same
+ * discipline as STARS/MOTES). Each rises from just below the viewport to
+ * well above it (bottom:-18% -> translateY(-115vh)) with a gentle
+ * horizontal sway and a scale wobble peaking ~1.06 mid-flight, fading in/out
+ * at the very ends of the keyframe so the bottom-reset is invisible — same
+ * seamless-loop trick as mote-drift. transform/opacity only. Gated to
+ * `[data-mode="chill"]` via `display` (default none, same pattern as the
+ * starfield/motes gating above) — motes vacate chill for these, per the
+ * design brief ("bubbles replace them" as chill's small-decoration layer).
+ * Shares --ambient-opacity with every other layer in this file; chill mode
+ * never carries `data-level`, so the L3 fade/pause branch simply never
+ * fires here (there is no "chill L3") rather than needing its own opt-out.
+ */
+.bubbles-layer {
+  opacity: var(--ambient-opacity);
+  transition: opacity 400ms ease-out;
+}
+
+.bubble {
+  display: none;
+  position: absolute;
+  bottom: -18%;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 50% 50%, var(--bubble) 0%, transparent 70%);
+  will-change: transform, opacity;
+  animation-name: bubble-rise;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+[data-mode="chill"] .bubble {
+  display: block;
+}
+
+/*
+ * Rise + sway + wobble in one seamless loop: opacity is 0 at both 0%/100%
+ * (invisible during the instant reset back to the start position, exactly
+ * like mote-drift), translateX also returns to 0 at both ends, and scale
+ * returns to 1 at both ends too — so nothing "pops" on wrap. The sway
+ * reverses direction twice across the rise (right, then left, then right)
+ * for a playful bob rather than a straight diagonal, and scale peaks at
+ * ~1.06 around the midpoint for the "wobble" the brief asks for.
+ */
+@keyframes bubble-rise {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  22% {
+    transform: translate(calc(var(--bubble-sway) * 1), -25vh) scale(1.02);
+  }
+  45% {
+    transform: translate(calc(var(--bubble-sway) * -0.6), -52vh) scale(1.06);
+  }
+  68% {
+    transform: translate(calc(var(--bubble-sway) * 0.8), -80vh) scale(1.03);
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, -115vh) scale(1);
+    opacity: 0;
+  }
+}
+
+/*
+ * Breathing rings (focus-only — shell/BackgroundAmbience.tsx). Three static
+ * concentric circles (no per-instance data needed — unlike bubbles, all
+ * three share one deterministic layout, so the component just renders three
+ * plain divs, same as .ambient-blob-1/2/3). Thin 2px stroke rather than a
+ * filled disk, centered roughly behind the timer hero: 35%/45% from
+ * top-left on desktop (sm breakpoint+), recentered to 50%/50% on mobile
+ * where there's no room to offset without clipping. Positioned via
+ * left/top + negative margin (not transform) specifically so the animated
+ * `transform: scale()` below is the *only* transform on the element — a
+ * transform-based centering trick would collide with the scale keyframe.
+ * Gated to `[data-mode="focus"]` via `display`, same pattern as bubbles/
+ * motes above.
+ */
+.rings-layer {
+  opacity: var(--ambient-opacity);
+  transition: opacity 400ms ease-out;
+}
+
+.ring {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 9999px;
+  border: 2px solid var(--ring);
+  animation-name: ring-breathe;
+  animation-duration: var(--ring-cycle);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+[data-mode="focus"] .ring {
+  display: block;
+}
+
+@media (min-width: 640px) {
+  .ring {
+    left: 35%;
+    top: 45%;
+  }
+}
+
+.ring-1 {
+  width: 42vmin;
+  height: 42vmin;
+  margin-left: -21vmin;
+  margin-top: -21vmin;
+  animation-delay: 0s;
+}
+
+.ring-2 {
+  width: 55vmin;
+  height: 55vmin;
+  margin-left: -27.5vmin;
+  margin-top: -27.5vmin;
+  /* Negative delay = "already partway through its cycle" on load, same
+   * trick .ambient-blob-2/3 use above — avoids all three rings starting
+   * perfectly in sync. calc() against --ring-cycle keeps the 1/3 stagger
+   * proportionally correct as the cycle slows per level (see --ring-cycle
+   * comment). At L1's 10s base this is -3.33s ≈ the brief's "+3.3s". */
+  animation-delay: calc(var(--ring-cycle) / -3);
+}
+
+.ring-3 {
+  width: 68vmin;
+  height: 68vmin;
+  margin-left: -34vmin;
+  margin-top: -34vmin;
+  /* -6.67s at L1's 10s base ≈ the brief's "+6.6s" — see .ring-2 comment. */
+  animation-delay: calc(var(--ring-cycle) / -3 * 2);
+}
+
+/*
+ * Continuous expand (scale 0.6 -> 1.15, interpolated linearly across the
+ * whole cycle since only the endpoints set `transform`) with a breath-shaped
+ * opacity pulse (fade in to the midpoint, back out by the end) layered on
+ * top — reads as an expanding ring that blooms in then dissolves out, then
+ * instantly resets to its small/invisible starting state for the next
+ * breath. Transform+opacity only, ease-in-out per the brief.
+ *
+ * Deliberately NOT paused at [data-level="3"] — every other ambient layer in
+ * this file (blobs, motes) freezes at L3, but a single slow breath is the
+ * one motion the design brief calls out as belonging in deep-lock focus, so
+ * only the cycle length changes (--ring-cycle above) and the shared
+ * --ambient-opacity fade still applies via .rings-layer.
+ */
+@keyframes ring-breathe {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.15);
+    opacity: 0;
   }
 }
 
