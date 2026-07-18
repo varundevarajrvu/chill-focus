@@ -5,6 +5,7 @@ import { LEVELS } from '../features/timer/levels'
 import { focusFade } from '../lib/motion'
 import { TimerPanel } from '../features/timer/TimerPanel'
 import { AmbientPanel } from '../features/audio/AmbientPanel'
+import { CdPlayer } from '../features/music/CdPlayer'
 import { NotesPanel } from '../features/notes/NotesPanel'
 import { TodoList } from '../features/todo/TodoList'
 
@@ -93,6 +94,7 @@ export function FocusLayout() {
       <div className="flex min-w-0 flex-col gap-8 sm:col-span-3">
         <TimerPanel />
         <AmbientPanel />
+        <CdPlayer />
       </div>
       <div className="min-w-0 sm:col-span-2">
         <NotesAndTodo />

@@ -9,6 +9,19 @@
       content="A two-mode study companion: Chill mode with music and mini-games, Focus mode with a leveled timer, ambient sound, and notes."
     />
     <title>Chill / Focus</title>
+    <script>
+      // Stamp the theme before first paint so dark users never flash light.
+      // Mirrors stores/themeStore.ts: persisted choice wins, else system.
+      try {
+        var t = null
+        var raw = localStorage.getItem('cf-theme')
+        if (raw) t = JSON.parse(raw).state.theme
+        if (t !== 'light' && t !== 'dark') {
+          t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        }
+        document.documentElement.setAttribute('data-theme', t)
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

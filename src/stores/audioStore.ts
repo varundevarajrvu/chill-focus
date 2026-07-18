@@ -1,23 +1,19 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { LEVELS } from '../features/timer/levels'
-import { useTimerStore, type Status } from './timerStore'
-import type { Level } from '../features/timer/levels'
+import { useTimerStore } from './timerStore'
 import type { TrackId } from '../features/audio/tracks'
+import { isTrackSelectionLocked } from '../lib/sessionLock'
 
 const DEFAULT_VOLUME = 0.6
 
 /**
- * Level 3 lock rule (master-prompt Section 5.2 table, "Ambient track" row):
- * once a Level-3 ("Deep Lock") session is running, track SELECTION is
- * locked — kills fiddling-as-procrastination. Volume and play/pause are
- * untouched by this; only selectTrack consults it. Exported so the store
- * guard and the UI (disabled state + explanatory copy) share one source of
- * truth instead of duplicating the condition.
+ * Re-exported so existing imports (e.g. AmbientPanel.tsx's
+ * `import { isTrackSelectionLocked } from '../../stores/audioStore'`) keep
+ * working unchanged. The helper itself now lives in lib/sessionLock.ts so
+ * musicStore's CD-player lock can share the exact same rule — see that
+ * file's doc comment.
  */
-export function isTrackSelectionLocked(level: Level, status: Status): boolean {
-  return LEVELS[level].canSwitchAudioMidSession === false && status === 'running'
-}
+export { isTrackSelectionLocked }
 
 interface AudioState {
   trackId: TrackId | null

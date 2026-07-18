@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { PLAYLIST } from '../features/music/playlist'
+import { useTimerStore } from './timerStore'
+import { isTrackSelectionLocked } from '../lib/sessionLock'
 
 const DEFAULT_VOLUME = 0.6
 
@@ -18,7 +20,9 @@ interface MusicState {
   /** Same continuity rule as `next`, wrapping to the last track from the first. */
   prev: () => void
   setVolume: (volume: number) => void
-  /** Explicit selection (e.g. clicking a playlist row) always starts playback. */
+  /** Explicit selection (e.g. clicking a playlist row) always starts playback.
+   *  Refuses (no-op) while Level-3-lock applies — see isTrackSelectionLocked
+   *  in lib/sessionLock.ts, the same rule the ambient panel uses. */
   selectTrack: (index: number) => void
 }
 
@@ -44,7 +48,11 @@ export const useMusicStore = create<MusicState>()(
 
       setVolume: (volume) => set({ volume: Math.min(1, Math.max(0, volume)) }),
 
-      selectTrack: (index) => set({ trackIndex: index, playing: true }),
+      selectTrack: (index) => {
+        const timer = useTimerStore.getState()
+        if (isTrackSelectionLocked(timer.level, timer.status)) return
+        set({ trackIndex: index, playing: true })
+      },
     }),
     {
       name: 'cf-music',

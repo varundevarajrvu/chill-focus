@@ -48,6 +48,97 @@
   --ambient-3: #d8f0ee;
 }
 
+/*
+ * Dark theme token sets (Feature 2 — dark mode toggle). Same per-mode
+ * structure as the light tokens above, scoped under [data-theme="dark"]
+ * combined with the existing [data-mode] attribute so switching Chill/Focus
+ * while already dark swaps hue exactly like it does in light. AppShell
+ * syncs data-theme onto <html> from stores/themeStore.ts (persisted key
+ * 'cf-theme'; defaults from prefers-color-scheme when nothing persisted).
+ *
+ * Contrast math below uses the same Y≈L³ approximation the light-token
+ * comments above already lean on — verified against their own stated
+ * figure: ink-muted L=0.47 vs surface L=0.99 -> Y 0.104/0.970 ->
+ * (0.970+.05)/(0.104+.05) = 6.6:1, which matches their "~6.5:1" comment, so
+ * the approximation is trustworthy for these low-chroma oklch pairs. The
+ * three ambient tokens per mode are literal hex (not oklch) specifically so
+ * the real WCAG sRGB relative-luminance formula could be run on them
+ * directly instead of approximated — see each block's comment.
+ */
+:root[data-theme="dark"],
+[data-theme="dark"][data-mode="chill"] {
+  /* Brighter warm accent so it still pops off a near-black paper.
+   * accent-ink stays near-black text on it: L=0.78 accent (Y=0.475) vs
+   * L=0.15 ink (Y=0.003) -> (0.475+.05)/(0.003+.05) = 9.9:1. */
+  --accent: oklch(0.78 0.16 55);
+  /* Deep tint, not a light pastel — this token is used as a *background*
+   * with --ink text on top (TimerPanel's nudge chip, MemoryMatch's "solved"
+   * chip, TicTacToe's active cell, ChillLayout's tile hover), so the pair
+   * that matters is accent-soft-vs-ink, not accent-soft-vs-accent:
+   * L=0.32 soft (Y=0.033) vs L=0.92 ink (Y=0.779) ->
+   * (0.779+.05)/(0.033+.05) = 10:1. */
+  --accent-soft: oklch(0.32 0.06 55);
+  --accent-ink: oklch(0.15 0.03 55);
+  --surface: oklch(0.17 0.01 80);
+  --surface-raised: oklch(0.23 0.012 60);
+  --shadow-tint: oklch(0.78 0.16 55 / 30%);
+  /* Ink pair recomputed for dark surfaces (not a naive light-mode inversion):
+   * ink L=0.92 (Y=0.779) vs surface L=0.17 (Y=0.005) -> 15.1:1.
+   * ink-muted L=0.72 (Y=0.373) vs surface (Y=0.005) -> 7.7:1, vs
+   * surface-raised L=0.23 (Y=0.012) -> 6.8:1 — both clear 4.5:1 with
+   * comfortable margin (brief's "~0.72" suggestion, confirmed by this math). */
+  --ink: oklch(0.92 0.01 80);
+  --ink-muted: oklch(0.72 0.02 80);
+
+  /*
+   * Dark aurora blobs — ember amber / deep magenta-brown / burnt orange.
+   * Real WCAG relative luminance (sRGB, not the oklch approximation):
+   *   #6b4423 (amber)        Y = 0.0738
+   *   #5a3040 (magenta-brown) Y = 0.0466
+   *   #7a3b12 (burnt orange)  Y = 0.0731
+   * Composited at the *same* --ambient-opacity as light mode (0.4 default,
+   * 0.18 at Level 3 — see the .ambient-layer rules below), worst case is a
+   * blob's own center against surface (Y≈0.005): Y_composite =
+   * 0.4*0.0738 + 0.6*0.005 = 0.0325. Contrast vs ink-muted (Y=0.373, the
+   * text that sits directly on this background) = (0.373+.05)/(0.0325+.05)
+   * = 5.13:1 — clears 4.5:1.
+   */
+  --ambient-1: #6b4423;
+  --ambient-2: #5a3040;
+  --ambient-3: #7a3b12;
+}
+
+[data-theme="dark"][data-mode="focus"] {
+  /* Brighter cool accent: L=0.72 accent (Y=0.373) vs L=0.14 ink (Y=0.003)
+   * -> (0.373+.05)/(0.003+.05) = 8.0:1. */
+  --accent: oklch(0.72 0.1 235);
+  /* Same accent-soft-vs-ink reasoning as chill dark: L=0.3 (Y=0.027) vs
+   * ink L=0.92 (Y=0.779) -> 10.6:1. */
+  --accent-soft: oklch(0.3 0.05 235);
+  --accent-ink: oklch(0.14 0.02 235);
+  --surface: oklch(0.16 0.01 235);
+  --surface-raised: oklch(0.21 0.012 235);
+  --shadow-tint: oklch(0.72 0.1 235 / 28%);
+  --ink: oklch(0.92 0.008 235);
+  --ink-muted: oklch(0.72 0.015 235);
+
+  /*
+   * Dark aurora — deep indigo / teal / violet. Real WCAG relative luminance:
+   *   #3b3470 (indigo) Y = 0.0456
+   *   #1f5a52 (teal)   Y = 0.0820  <- brightest, tightest margin
+   *   #4a2e63 (violet) Y = 0.0431
+   * Worst case (teal): Y_composite = 0.4*0.0820 + 0.6*0.004 (surface
+   * L=0.16 -> Y≈0.0041) = 0.0353. Contrast vs ink-muted (Y=0.373) =
+   * (0.373+.05)/(0.0353+.05) = 4.96:1 — still clears 4.5:1, but this is the
+   * tightest pair in this file; if teal ever needs to run brighter for
+   * visibility, darken the hex rather than raising --ambient-opacity (which
+   * is shared with Level 3's calmer 0.18 case).
+   */
+  --ambient-1: #3b3470;
+  --ambient-2: #1f5a52;
+  --ambient-3: #4a2e63;
+}
+
 @theme {
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
@@ -71,6 +162,23 @@
     0 1px 1px rgba(30, 24, 16, 0.05),
     0 14px 24px -14px rgba(30, 24, 16, 0.14),
     0 32px 56px -20px var(--shadow-tint);
+}
+
+/* Dark variant: the light-mode inset relies on a bright top edge reading as
+ * a highlight, which reads muddy on a dark surface — flipped to a faint
+ * light hairline instead (rgba(255,255,255,0.06), just enough to suggest
+ * "lifted" without glowing). The drop shadow goes to true black rather than
+ * the warm-tinted rgba(30,24,16,...) used in light mode (that tint would
+ * barely show up against an already-dark background) and reaches deeper,
+ * since a light shadow needs more spread to read as elevation against a
+ * dark paper. --shadow-tint is already the per-mode dark accent glow (see
+ * the dark token blocks above), so the colored outer glow needs no override. */
+[data-theme="dark"] .shadow-hero {
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+    0 1px 1px rgba(0, 0, 0, 0.4),
+    0 14px 24px -14px rgba(0, 0, 0, 0.55),
+    0 32px 64px -20px var(--shadow-tint);
 }
 
 /*
@@ -99,6 +207,14 @@ button:not(:disabled) {
 /* Mode switch reads as a subtle shift, not a theme swap. */
 :root {
   color-scheme: light;
+}
+
+/* Higher specificity than the bare `:root` above ([data-theme="dark"] adds
+ * an attribute selector), so this always wins once data-theme="dark" is set
+ * regardless of source order — lets native form controls / scrollbars
+ * render dark instead of fighting the page's own dark surfaces. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 /*
@@ -411,6 +527,99 @@ body * {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+/*
+ * Starfield (Feature 3, dark-only — shell/BackgroundAmbience.tsx). A fixed
+ * set of tiny near-white dots at hardcoded positions/sizes/timings (the
+ * component's STARS array — never Math.random() at render, so the sky is
+ * identical on every load). Hidden entirely in light mode via `display`;
+ * each visible dot twinkles on its own opacity keyframe, staggered purely
+ * through the inline animation-delay set per-star in the component (every
+ * dot shares this one @keyframes/animation-name, just offset in time).
+ * Transform/opacity only, aria-hidden (inherited from the parent ambient
+ * container), pointer-events-none, clipped by the parent's overflow-hidden.
+ */
+.starfield {
+  display: none;
+}
+
+[data-theme="dark"] .starfield {
+  display: block;
+}
+
+.starfield-dot {
+  position: absolute;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.85);
+  animation-name: starfield-twinkle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes starfield-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+/* Static, not just slower — a twinkling field of dots is exactly the kind
+ * of ambient flicker prefers-reduced-motion asks sites to drop. Dots stay
+ * visible (so dark mode still visually reads as "dark mode with stars") at
+ * a fixed mid-twinkle opacity instead of animating between the two. */
+@media (prefers-reduced-motion: reduce) {
+  .starfield-dot {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+/*
+ * Focus-mode CD player (features/music/CdPlayer.tsx) — disc rotation is
+ * purely a playing-status indicator (the one exception the focus motion
+ * language makes for continuous motion: it's tied 1:1 to playback state,
+ * not a decorative loop). `animation-play-state` toggles via the
+ * `.cd-disc-playing` class (driven by musicStore's `playing`), so pausing
+ * freezes the disc mid-frame rather than resetting it to 0deg.
+ *
+ * Under prefers-reduced-motion the rotation is removed entirely (a
+ * continuously spinning disc is a textbook motion trigger) — the play/pause
+ * icon swap on the center button (its own aria-label + glyph change) plus
+ * this glow ring are what carry "is it playing" with zero motion involved;
+ * the glow is a property fade (box-shadow/filter), not a translate/scale/
+ * rotate, so it's left running even under reduced motion, same as the rest
+ * of this file's plain color/shadow transitions.
+ */
+.cd-disc {
+  animation: cd-disc-spin 4s linear infinite;
+  animation-play-state: paused;
+  transition:
+    box-shadow 400ms ease-out,
+    filter 400ms ease-out;
+}
+
+.cd-disc-playing {
+  animation-play-state: running;
+  filter: drop-shadow(0 10px 18px var(--shadow-tint));
+}
+
+@keyframes cd-disc-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cd-disc {
+    animation: none;
+  }
+}
+
 body {
   min-height: 100vh;
   font-family: var(--font-sans);
@@ -432,4 +641,34 @@ body {
       transparent 32px
     );
   background-attachment: fixed;
+}
+
+/*
+ * Dark paper — a single shared dark base (not per-mode; light mode's body
+ * is likewise one fixed #faf9f4 regardless of Chill/Focus, only the
+ * --surface *token* differs per mode) with faint LIGHT gridlines instead of
+ * dark ones, so the grid stays visible against a near-black background.
+ * `body` is a child of `<html data-theme="dark">`, hence the descendant
+ * selector rather than a second [data-theme] block on :root — this rule's
+ * specificity (0,1,1) beats the plain `body` rule above (0,0,1) regardless
+ * of source order, so it doesn't strictly need to come after it, but it's
+ * kept here for readability.
+ */
+[data-theme="dark"] body {
+  background-color: oklch(0.17 0.01 80);
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.04) 0,
+      rgba(255, 255, 255, 0.04) 1px,
+      transparent 1px,
+      transparent 32px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.04) 0,
+      rgba(255, 255, 255, 0.04) 1px,
+      transparent 1px,
+      transparent 32px
+    );
 }

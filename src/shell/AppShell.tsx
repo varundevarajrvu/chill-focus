@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useModeStore } from '../stores/modeStore'
 import { useTimerStore } from '../stores/timerStore'
+import { useThemeStore } from '../stores/themeStore'
 import { useTabTitle } from '../hooks/useTabTitle'
 import { AppreciationOverlay } from '../features/appreciation/AppreciationOverlay'
 import { BackgroundAmbience } from './BackgroundAmbience'
@@ -18,10 +19,15 @@ import '../lib/audioExclusivity'
 export function AppShell() {
   const mode = useModeStore((s) => s.mode)
   const level = useTimerStore((s) => s.level)
+  const theme = useThemeStore((s) => s.theme)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-mode', mode)
   }, [mode])
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
 
   // data-level only carries meaning in focus mode, so it's only ever set
   // while mode === 'focus' — chill mode's chrome is untouched by level CSS.
