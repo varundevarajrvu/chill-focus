@@ -1,35 +1,34 @@
-import { useMusicStore } from '../../stores/musicStore'
+import { isTrackSelectionLocked, useAudioStore } from '../../stores/audioStore'
 import { useTimerStore } from '../../stores/timerStore'
-import { isTrackSelectionLocked } from '../../lib/sessionLock'
-import { PLAYLIST } from './playlist'
-// Side-effect import: activates the module-level music manager's store
-// subscription — same reasoning as MusicPlayer.tsx (chill mode). Mounting
-// this panel in focus mode is enough to wire up playback there too; the
-// manager itself is a singleton, so importing it from both panels is safe
-// (the second import is a cache hit, not a second subscription).
-import '../music/musicManager'
+import { TRACKS } from './tracks'
 
-const SONGS_LOCKED_MESSAGE = 'Songs locked during Level 3 session'
+const TRACK_LOCKED_MESSAGE = 'Track locked during Level 3 session'
 
 /**
- * Focus-mode music player — a CD-styled alternative to Chill's chart-style
- * MusicPlayer, reusing the same musicStore/musicManager/PLAYLIST underneath.
+ * Focus-mode ambient player — the CD-styled disc (formerly
+ * features/music/CdPlayer.tsx, Chill's music mirror) now wired to
+ * audioStore instead of musicStore. Music leaves Focus mode entirely as of
+ * this change: the disc + rotation mechanics are reused verbatim, but the
+ * stack next to the disc lists the five ambient tracks (tracks.ts) rather
+ * than songs, and every control drives ambient playback. Replaces the old
+ * AmbientPanel.tsx (chips) + CdPlayer.tsx (music) pair in FocusLayout.
+ *
  * Focus motion language only (ease-out fades via plain CSS transitions, no
- * springs) — unlike MusicPlayer, this component intentionally does not use
- * framer-motion's whileHover/whileTap presets.
+ * springs/whileHover/whileTap presets) — same restraint CdPlayer.tsx used
+ * to observe relative to Chill's MusicPlayer.
  */
-export function CdPlayer() {
-  const trackIndex = useMusicStore((s) => s.trackIndex)
-  const playing = useMusicStore((s) => s.playing)
-  const volume = useMusicStore((s) => s.volume)
-  const play = useMusicStore((s) => s.play)
-  const pause = useMusicStore((s) => s.pause)
-  const setVolume = useMusicStore((s) => s.setVolume)
-  const selectTrack = useMusicStore((s) => s.selectTrack)
+export function AmbientCdPlayer() {
+  const trackId = useAudioStore((s) => s.trackId)
+  const playing = useAudioStore((s) => s.playing)
+  const volume = useAudioStore((s) => s.volume)
+  const selectTrack = useAudioStore((s) => s.selectTrack)
+  const play = useAudioStore((s) => s.play)
+  const pause = useAudioStore((s) => s.pause)
+  const setVolume = useAudioStore((s) => s.setVolume)
 
   const level = useTimerStore((s) => s.level)
   const status = useTimerStore((s) => s.status)
-  const locked = isTrackSelectionLocked(level, status)
+  const trackLocked = isTrackSelectionLocked(level, status)
 
   return (
     <section className="flex flex-col gap-5 border-t border-ink-muted/10 pt-6 sm:flex-row sm:items-start sm:gap-6">
@@ -40,7 +39,7 @@ export function CdPlayer() {
           aria-hidden="true"
         >
           <defs>
-            <radialGradient id="cd-player-sheen" cx="35%" cy="30%" r="75%">
+            <radialGradient id="ambient-cd-player-sheen" cx="35%" cy="30%" r="75%">
               <stop offset="0%" stopColor="white" stopOpacity="0.35" />
               <stop offset="45%" stopColor="white" stopOpacity="0.08" />
               <stop offset="100%" stopColor="white" stopOpacity="0" />
@@ -51,53 +50,49 @@ export function CdPlayer() {
           <circle cx="100" cy="100" r="71" fill="none" stroke="var(--color-ink-muted)" strokeWidth="1" strokeOpacity="0.14" />
           <circle cx="100" cy="100" r="57" fill="none" stroke="var(--color-accent-soft)" strokeWidth="2" strokeOpacity="0.55" />
           <circle cx="100" cy="100" r="43" fill="none" stroke="var(--color-ink-muted)" strokeWidth="1" strokeOpacity="0.14" />
-          <circle cx="100" cy="100" r="97" fill="url(#cd-player-sheen)" />
+          <circle cx="100" cy="100" r="97" fill="url(#ambient-cd-player-sheen)" />
           <circle cx="100" cy="100" r="17" fill="var(--color-surface)" stroke="var(--color-ink-muted)" strokeOpacity="0.22" />
           <circle cx="100" cy="100" r="5" fill="var(--color-ink-muted)" fillOpacity="0.35" />
         </svg>
         <button
           type="button"
           onClick={() => (playing ? pause() : play())}
+          disabled={!trackId}
           aria-pressed={playing}
-          aria-label={playing ? 'Pause music' : 'Play music'}
-          className="btn-primary-sheen absolute flex size-14 items-center justify-center rounded-full bg-accent text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+          aria-label={playing ? 'Pause' : 'Play'}
+          className="btn-primary-sheen absolute flex size-14 items-center justify-center rounded-full bg-accent text-accent-ink outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
         >
           {playing ? <PauseIcon /> : <PlayIcon />}
         </button>
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-3">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Music</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Ambient sound</h2>
 
-        <div role="group" aria-label="Songs" className="flex flex-col gap-1.5">
-          {PLAYLIST.map((track, index) => {
-            const active = index === trackIndex
+        <div role="group" aria-label="Ambient track" className="flex flex-col gap-1.5">
+          {TRACKS.map((track) => {
+            const active = trackId === track.id
             return (
               <button
                 key={track.id}
                 type="button"
                 aria-pressed={active}
-                disabled={locked}
-                title={locked ? SONGS_LOCKED_MESSAGE : undefined}
-                onClick={() => selectTrack(index)}
-                className={`flex min-w-0 flex-col items-start gap-0.5 rounded-xl px-3 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50 ${
+                disabled={trackLocked}
+                title={trackLocked ? TRACK_LOCKED_MESSAGE : undefined}
+                onClick={() => selectTrack(track.id)}
+                className={`w-full rounded-xl px-3 py-2 text-left text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50 ${
                   active ? 'bg-accent-soft text-ink' : 'text-ink-muted hover:bg-ink-muted/5 hover:text-ink'
                 }`}
               >
-                <span className="w-full truncate text-sm font-medium" title={track.title}>
-                  {track.title}
-                </span>
-                <span className="w-full truncate text-xs opacity-80" title={track.artist}>
-                  {track.artist}
-                </span>
+                {track.label}
               </button>
             )
           })}
         </div>
 
-        {locked && (
+        {trackLocked && (
           <p role="status" className="text-xs text-ink-muted">
-            {SONGS_LOCKED_MESSAGE}. Play, pause, and volume still work.
+            {TRACK_LOCKED_MESSAGE}. Volume and play/pause still work.
           </p>
         )}
 
@@ -110,7 +105,7 @@ export function CdPlayer() {
             step={0.01}
             value={volume}
             onChange={(e) => setVolume(e.target.valueAsNumber)}
-            aria-label="Music volume"
+            aria-label="Ambient volume"
             className="flex-1 accent-accent"
           />
         </label>
@@ -121,8 +116,8 @@ export function CdPlayer() {
 
 // Distinct glyphs from MusicPlayer's — kept local/presentational so this
 // component has no import-time coupling to the chill player. Accessible
-// name lives on the parent button's aria-label ("Play music"/"Pause
-// music"), not on these icons.
+// name lives on the parent button's aria-label ("Play"/"Pause"), not on
+// these icons.
 function PlayIcon() {
   return (
     <svg viewBox="0 0 24 24" className="ml-0.5 size-6" fill="currentColor" aria-hidden="true">

@@ -4,8 +4,7 @@ import { useTimerStore } from '../stores/timerStore'
 import { LEVELS } from '../features/timer/levels'
 import { focusFade } from '../lib/motion'
 import { TimerPanel } from '../features/timer/TimerPanel'
-import { AmbientPanel } from '../features/audio/AmbientPanel'
-import { CdPlayer } from '../features/music/CdPlayer'
+import { AmbientCdPlayer } from '../features/audio/AmbientCdPlayer'
 import { NotesPanel } from '../features/notes/NotesPanel'
 import { TodoList } from '../features/todo/TodoList'
 
@@ -93,8 +92,7 @@ export function FocusLayout() {
     <div className="grid gap-10 sm:grid-cols-5 sm:gap-8 lg:gap-12">
       <div className="flex min-w-0 flex-col gap-8 sm:col-span-3">
         <TimerPanel />
-        <AmbientPanel />
-        <CdPlayer />
+        <AmbientCdPlayer />
       </div>
       <div className="min-w-0 sm:col-span-2">
         <NotesAndTodo />

@@ -29,6 +29,18 @@
   --ambient-1: #ffe3bf;
   --ambient-2: #ffedc2;
   --ambient-3: #ffd9d2;
+
+  /*
+   * Drifting motes (BackgroundAmbience.tsx, Feature 4) — soft warm
+   * accent-tinted dot, plain hex (full alpha) same as the blob tokens
+   * above: composited through the shared --ambient-opacity (0.4 default)
+   * against the paper body background (Y≈0.946), worst case at a mote's
+   * own center is Y_composite = 0.4*0.669 + 0.6*0.946 = 0.835 (mote hex
+   * #f7cf9f -> Y≈0.669 via sRGB relative luminance). Contrast vs ink-muted
+   * text (chill light, Y≈0.104) = (0.835+.05)/(0.104+.05) = 5.75:1 — clears
+   * 4.5:1 with room, so light mode needs no extra attenuation.
+   */
+  --mote: #f7cf9f;
 }
 
 [data-mode="focus"] {
@@ -46,6 +58,11 @@
   --ambient-1: #dbe7f5;
   --ambient-2: #dfe3ea;
   --ambient-3: #d8f0ee;
+
+  /* Soft cool accent-tinted mote, same reasoning as chill's above: hex
+   * #cfe3f2 -> Y≈0.746; composite at 0.4 opacity vs paper (0.946) = 0.866;
+   * contrast vs focus light ink-muted (Y≈0.097) = 6.22:1. */
+  --mote: #cfe3f2;
 }
 
 /*
@@ -106,6 +123,22 @@
   --ambient-1: #6b4423;
   --ambient-2: #5a3040;
   --ambient-3: #7a3b12;
+
+  /*
+   * Dark-theme motes read as a "pale glow" per spec — a bright color, unlike
+   * the deliberately-dark blob hexes above. Composited at the *same*
+   * --ambient-opacity (0.4) that would be way too much alpha for a bright
+   * color against a near-black paper (0.4*Y_full ≈ 0.4*0.68 ≈ 0.27, which
+   * would crush contrast against ink-muted's Y≈0.373 to ~1.6:1). So the
+   * intrinsic alpha is baked into the token itself (rgba, not a plain hex)
+   * at ~0.10, giving an effective blend alpha of 0.4*0.10=0.04:
+   * Y_composite = 0.04*0.6835 (rgb 255,207,158 full-alpha luminance) +
+   * 0.96*0.0041 (surface Y) = 0.0313. Contrast vs ink-muted (Y=0.373) =
+   * (0.373+.05)/(0.0313+.05) = 5.20:1 — clears 4.5:1, matching the same
+   * order of margin the dark aurora blobs above target. Do not swap this
+   * back to a plain hex without re-deriving this budget.
+   */
+  --mote: rgba(255, 207, 158, 0.1);
 }
 
 [data-theme="dark"][data-mode="focus"] {
@@ -137,6 +170,15 @@
   --ambient-1: #3b3470;
   --ambient-2: #1f5a52;
   --ambient-3: #4a2e63;
+
+  /* Pale cool glow, same budget as dark chill's mote above: rgba baked to
+   * ~0.10 intrinsic alpha. Full-alpha rgb(191,224,255) -> Y≈0.715; effective
+   * blend alpha 0.4*0.10=0.04 -> Y_composite = 0.04*0.715+0.96*0.0041=0.0325.
+   * Contrast vs ink-muted (Y=0.373) = (0.373+.05)/(0.0325+.05) = 5.13:1 —
+   * clears 4.5:1 (this is the tighter of the two dark motes, same margin as
+   * the dark aurora teal blob above — don't brighten past this without
+   * re-checking). */
+  --mote: rgba(191, 224, 255, 0.1);
 }
 
 @theme {
@@ -577,12 +619,94 @@ body * {
 }
 
 /*
- * Focus-mode CD player (features/music/CdPlayer.tsx) — disc rotation is
- * purely a playing-status indicator (the one exception the focus motion
- * language makes for continuous motion: it's tied 1:1 to playback state,
- * not a decorative loop). `animation-play-state` toggles via the
- * `.cd-disc-playing` class (driven by musicStore's `playing`), so pausing
- * freezes the disc mid-frame rather than resetting it to 0deg.
+ * Drifting motes (Feature 4, both themes/modes — shell/BackgroundAmbience.tsx).
+ * A fixed set of small (4-7px) soft dots at hardcoded positions/sizes/
+ * durations/delays (the component's MOTES array — never Math.random() at
+ * render). Each is a radial-gradient soft-falloff circle (no filter:blur,
+ * GPU-cheap) tinted via --mote (see the four per-mode/theme token blocks
+ * above for the contrast math). `.motes-layer` shares the exact same
+ * --ambient-opacity variable/mechanism the aurora blobs use (0.4 default,
+ * 0.18 at Level 3, see below) so it fades/dims identically; dark mode's
+ * extra safety margin lives in the --mote token's own baked-in alpha, not
+ * in a separate opacity knob, keeping "same mechanism" literally true.
+ */
+.motes-layer {
+  opacity: var(--ambient-opacity);
+  transition: opacity 400ms ease-out;
+}
+
+.mote {
+  position: absolute;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 50% 50%, var(--mote) 0%, transparent 70%);
+  will-change: transform, opacity;
+  animation-name: mote-drift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+/*
+ * Straight vertical travel (bottom:-5% to top:-5%, i.e. translateY(-110vh))
+ * with a gentle per-dot horizontal sway via the --mote-sway custom property
+ * (set inline per dot, transform-only) — sways out and back twice so the
+ * motion reads as organic drift rather than a straight-line diagonal.
+ * Opacity is 0 at both 0%/100%, so the instant reset back to the start
+ * position on loop restart is invisible (translateX also returns to 0 at
+ * both ends, so there's no jump there either — a fully seamless loop).
+ */
+@keyframes mote-drift {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  10% {
+    transform: translate(calc(var(--mote-sway) * 0.3), -11vh);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(var(--mote-sway), -27.5vh);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(0, -55vh);
+    opacity: 1;
+  }
+  75% {
+    transform: translate(calc(var(--mote-sway) * -1), -82.5vh);
+    opacity: 1;
+  }
+  90% {
+    transform: translate(calc(var(--mote-sway) * -0.3), -99vh);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, -110vh);
+    opacity: 0;
+  }
+}
+
+/* Level 3 = minimal chrome: motes stop drifting too, same as the blobs. */
+[data-level="3"] .mote {
+  animation-play-state: paused;
+}
+
+/* Hidden outright, not just paused — a frozen dot at a random mid-drift
+ * position reads as a smudge/dirt on the paper rather than decoration, so
+ * (unlike the blobs, which stay as static gradients under reduced motion)
+ * motes are removed entirely. */
+@media (prefers-reduced-motion: reduce) {
+  .mote {
+    display: none;
+  }
+}
+
+/*
+ * Focus-mode ambient CD player (features/audio/AmbientCdPlayer.tsx) — disc
+ * rotation is purely a playing-status indicator (the one exception the
+ * focus motion language makes for continuous motion: it's tied 1:1 to
+ * playback state, not a decorative loop). `animation-play-state` toggles
+ * via the `.cd-disc-playing` class (driven by audioStore's `playing`), so
+ * pausing freezes the disc mid-frame rather than resetting it to 0deg.
  *
  * Under prefers-reduced-motion the rotation is removed entirely (a
  * continuously spinning disc is a textbook motion trigger) — the play/pause
