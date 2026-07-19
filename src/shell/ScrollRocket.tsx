@@ -6,6 +6,7 @@ import {
   useReducedMotion,
   useScroll,
   useSpring,
+  useTime,
   useTransform,
   useVelocity,
 } from 'framer-motion'
@@ -129,7 +130,66 @@ import { useThemeStore } from '../stores/themeStore'
  *    translate+fade CSS animation continuously; the whole group's opacity is
  *    the shared `fastGateOpacity` spring, so the trail only reads as visible
  *    while the plane is moving fast — the sparkle-gating pattern, reused.
+ *
+ * "More tricks" pass (v5): every addition below is still spring/motion-value
+ * driven — no per-frame React state. Trigger conditions live in
+ * `useMotionValueEvent` callbacks; cooldowns are plain timestamps in refs
+ * (reading/writing a ref doesn't re-render, same discipline `lastDirection`
+ * already relied on).
+ *  - Rocket's flip and the plane's roll now share ONE combined
+ *    velocity-change handler (previously two separate ones): on an actual
+ *    direction flip (tracked via `lastDirection`, not on every event within
+ *    the same direction) both `rotationTarget` and `rollTarget` are bumped by
+ *    +360 — this is what upgrades the rocket's old 0/180 somersault toggle to
+ *    a full 360° backflip that always resettles at a multiple of 360 (i.e.
+ *    visually "nose up"), the same "ever-increasing target" trick the plane's
+ *    barrel roll already used.
+ *  - Plane loop-the-loop: a rapid scroll flick (|velocity| spikes past
+ *    LOOP_VELOCITY_THRESHOLD, cooldown-gated so it can't chain-spam) bumps
+ *    `loopTarget` by +1. `loopSpring` chases that integer target; `loopRotate`
+ *    (a full 360° spin) and `loopOffsetX/Y` (a small circular translate,
+ *    parameterized as `sin(θ), -(1-cos(θ))` — a real circle starting and
+ *    ending at the origin) are both derived from the same spring, so
+ *    rotation and translation stay perfectly in phase — a real loop, not
+ *    just a spin-in-place. The offset is applied via a small nested
+ *    motion.div (plane branch only) rather than merged into the shared
+ *    vw/vh `x`/`y` position spring, sidestepping any unit mismatch.
+ *  - Rocket corkscrew wobble: `useTime()` (a framer motion value that ticks
+ *    off real time, not a React-state rAF loop) drives a continuous small
+ *    sine oscillation, amplitude-gated by a heavily-damped spring off
+ *    |velocity| (`corkscrewGate`) that only ramps toward 1 once speed has
+ *    stayed high for a bit — reads as "sustained fast scrolling", not a
+ *    twitch on every spike.
+ *  - Celebrations: one `useMotionValueEvent(scrollYProgress, ...)` handler
+ *    checks both ends (progress <=0.02 or >=0.98) AND that scroll speed is
+ *    non-trivial (a companion already resting at the very bottom shouldn't
+ *    keep celebrating). Plane: a quick wing-waggle (±20°, twice) via a
+ *    handful of `setTimeout`-scheduled `.set()` calls chasing a snappy
+ *    spring — the same imperative-sequence trick used for the rocket's
+ *    touchdown below, just on `waggleTarget`. Rocket, bottom only: a
+ *    touchdown bounce — `landingScaleX/Y` squash-then-overshoot-then-settle
+ *    (multiplied onto the existing velocity-driven squash/stretch) plus a
+ *    `flameBurst` spike (added onto the existing velocity-driven flame
+ *    scale). Both have their own cooldown ref so a single landing can't
+ *    re-fire on every subsequent scroll wiggle at the bottom.
  */
+
+// Loop-the-loop (plane): velocity spike threshold + cooldown, and the
+// circular detour's radius.
+const LOOP_VELOCITY_THRESHOLD = 1100 // px/s — a rapid flick, not just "fast".
+const LOOP_COOLDOWN_MS = 2000
+const LOOP_RADIUS = 20 // px
+
+// Corkscrew wobble (rocket): sustained-speed gate range (px/s) — below the
+// low end the gate is ~0, above the high end it's ~1, smoothed by a slow
+// spring so only *sustained* fast scroll (not a brief spike) reads as "on".
+const CORKSCREW_GATE_RANGE: [number, number] = [900, 1400]
+
+// End-of-page celebrations (both companions): minimum |velocity| to count as
+// "reaching the end with speed" (vs. just resting there), plus cooldowns.
+const CELEBRATION_SPEED_MIN = 150 // px/s
+const CELEBRATION_COOLDOWN_MS = 2000
+const LANDING_COOLDOWN_MS = 2500
 
 const VELOCITY_DEADZONE = 60 // px/s — below this, hold the last orientation.
 const VELOCITY_RANGE = 1600 // px/s — clamp point for lean/flame mapping.
@@ -163,6 +223,22 @@ const ROLL_SPRING = { stiffness: 90, damping: 14, mass: 0.7 }
 // Plane bank spring: same idea as the rocket's LEAN_SPRING (smooths raw
 // velocity into a lean), just mapped to a wider angle range below.
 const BANK_SPRING = { stiffness: 150, damping: 20 }
+// Loop-the-loop spring: bouncy enough that the tail end of the loop
+// overshoots and settles rather than snapping dead — same family as
+// FLIP_SPRING/ROLL_SPRING.
+const LOOP_SPRING = { stiffness: 70, damping: 11, mass: 0.8 }
+// Wing-waggle spring: snappy, no meaningful overshoot beyond the imperative
+// target sequence itself — this just needs to chase each ±20° step quickly.
+const WAGGLE_SPRING = { stiffness: 260, damping: 16 }
+// Corkscrew gate spring: deliberately slow/overdamped (damping well above
+// critical for this stiffness) so the wobble's amplitude ramps in gradually
+// — "sustained" fast scroll, not an instant twitch on every spike.
+const CORKSCREW_GATE_SPRING = { stiffness: 40, damping: 20 }
+// Touchdown squash/stretch spring: bouncy, reads as a bounce rather than a
+// mechanical settle.
+const LANDING_SPRING = { stiffness: 260, damping: 14 }
+// Flame-burst spring: quick flare, quick decay.
+const FLAME_BURST_SPRING = { stiffness: 200, damping: 12 }
 
 interface Sparkle {
   /** Position in px, relative to the rocket's own relative-positioned box. */
@@ -219,13 +295,8 @@ export function ScrollRocket() {
   const y = useSpring(yRaw, POSITION_SPRING)
   const x = useSpring(xRaw, POSITION_SPRING)
 
-  // --- Rocket: direction dead-zoned target rotation, sprung into a somersault ---
+  // --- Rocket: direction-flip target rotation, sprung into a backflip ---
   const rotationTarget = useMotionValue(0)
-  useMotionValueEvent(velocity, 'change', (v) => {
-    if (v > VELOCITY_DEADZONE) rotationTarget.set(0)
-    else if (v < -VELOCITY_DEADZONE) rotationTarget.set(180)
-    // else: within the dead zone — leave the target as it is (no jitter).
-  })
   const flip = useSpring(rotationTarget, FLIP_SPRING)
 
   // --- Rocket: velocity-proportional lean layered on top of the flip ---
@@ -233,10 +304,12 @@ export function ScrollRocket() {
     clamp: true,
   })
   const lean = useSpring(leanRaw, LEAN_SPRING)
-  const rocketRotate = useTransform(
-    [flip, lean],
-    ([flipDeg, leanDeg]) => (flipDeg as number) + (leanDeg as number),
-  )
+
+  // --- Rocket: corkscrew wobble at sustained high speed — useTime() ticks
+  // off real time (a motion value, not a React-state rAF loop), and its sine
+  // is amplitude-gated by a slow/overdamped spring off |velocity| so only
+  // *sustained* fast scroll ramps the wobble in. ---
+  const time = useTime()
 
   // --- Plane: banking into velocity (wider than the rocket's lean) ---
   const bankRaw = useTransform(velocity, [-VELOCITY_RANGE, 0, VELOCITY_RANGE], [-20, 0, 20], {
@@ -246,21 +319,120 @@ export function ScrollRocket() {
 
   // --- Plane: barrel roll on direction flip (never flips to face backwards) ---
   const rollTarget = useMotionValue(0)
+  const roll = useSpring(rollTarget, ROLL_SPRING)
+
+  // --- Plane: loop-the-loop on a rapid scroll flick — full 360° spin
+  // (loopRotate) combined with a small circular translate detour
+  // (loopOffsetX/Y), both driven by the same spring so they stay in phase. ---
+  const loopTarget = useMotionValue(0)
+  const loopSpring = useSpring(loopTarget, LOOP_SPRING)
+  const loopRotate = useTransform(loopSpring, (t) => t * 360)
+  const loopOffsetX = useTransform(loopSpring, (t) => Math.sin(t * Math.PI * 2) * LOOP_RADIUS)
+  const loopOffsetY = useTransform(
+    loopSpring,
+    (t) => -(1 - Math.cos(t * Math.PI * 2)) * LOOP_RADIUS,
+  )
+
+  // --- Both: shared direction-flip + rapid-flick handler. Direction flips
+  // (tracked via lastDirection, not fired on every event within the same
+  // direction) bump both rotationTarget and rollTarget by +360 — the rocket's
+  // backflip and the plane's barrel roll are the same "ever-increasing
+  // target" trick, so they share one handler. A separate rapid-flick check
+  // (velocity spike past a threshold, cooldown-gated) bumps the plane's
+  // loopTarget for the loop-the-loop, independent of direction. ---
   const lastDirection = useRef<-1 | 0 | 1>(0)
+  const lastLoopTime = useRef(0)
   useMotionValueEvent(velocity, 'change', (v) => {
     if (v > VELOCITY_DEADZONE) {
-      if (lastDirection.current === -1) rollTarget.set(rollTarget.get() + 360)
+      if (lastDirection.current === -1) {
+        rotationTarget.set(rotationTarget.get() + 360)
+        rollTarget.set(rollTarget.get() + 360)
+      }
       lastDirection.current = 1
     } else if (v < -VELOCITY_DEADZONE) {
-      if (lastDirection.current === 1) rollTarget.set(rollTarget.get() + 360)
+      if (lastDirection.current === 1) {
+        rotationTarget.set(rotationTarget.get() + 360)
+        rollTarget.set(rollTarget.get() + 360)
+      }
       lastDirection.current = -1
     }
-    // else: within the dead zone — direction isn't touched, same as the rocket.
+    // else: within the dead zone — direction isn't touched (no jitter).
+
+    const now = Date.now()
+    if (Math.abs(v) > LOOP_VELOCITY_THRESHOLD && now - lastLoopTime.current > LOOP_COOLDOWN_MS) {
+      lastLoopTime.current = now
+      loopTarget.set(loopTarget.get() + 1)
+    }
   })
-  const roll = useSpring(rollTarget, ROLL_SPRING)
+
+  // --- Both: quick wing-waggle / touchdown-bounce triggers at page ends. ---
+  const waggleTarget = useMotionValue(0)
+  const waggleSpring = useSpring(waggleTarget, WAGGLE_SPRING)
+  const landingScaleYTarget = useMotionValue(1)
+  const landingScaleXTarget = useMotionValue(1)
+  const landingScaleY = useSpring(landingScaleYTarget, LANDING_SPRING)
+  const landingScaleX = useSpring(landingScaleXTarget, LANDING_SPRING)
+  const flameBurstTarget = useMotionValue(0)
+  const flameBurstSpring = useSpring(flameBurstTarget, FLAME_BURST_SPRING)
+  const lastCelebrationTime = useRef(0)
+  const lastLandingTime = useRef(0)
+  useMotionValueEvent(scrollYProgress, 'change', (p) => {
+    const atEnd = p <= 0.02 || p >= 0.98
+    if (!atEnd || Math.abs(velocity.get()) < CELEBRATION_SPEED_MIN) return
+    const now = Date.now()
+
+    // Plane: a quick ±20° rock, twice, at either end.
+    if (now - lastCelebrationTime.current > CELEBRATION_COOLDOWN_MS) {
+      lastCelebrationTime.current = now
+      waggleTarget.set(20)
+      setTimeout(() => waggleTarget.set(-20), 150)
+      setTimeout(() => waggleTarget.set(20), 300)
+      setTimeout(() => waggleTarget.set(-20), 450)
+      setTimeout(() => waggleTarget.set(0), 600)
+    }
+
+    // Rocket: touchdown bounce (squash + flame burst), bottom of page only.
+    if (p >= 0.98 && now - lastLandingTime.current > LANDING_COOLDOWN_MS) {
+      lastLandingTime.current = now
+      landingScaleYTarget.set(0.75)
+      landingScaleXTarget.set(1.18)
+      flameBurstTarget.set(1.2)
+      setTimeout(() => {
+        landingScaleYTarget.set(1.12)
+        landingScaleXTarget.set(0.93)
+      }, 110)
+      setTimeout(() => {
+        landingScaleYTarget.set(1)
+        landingScaleXTarget.set(1)
+        flameBurstTarget.set(0)
+      }, 280)
+    }
+  })
+
+  // |velocity| magnitude — shared by the corkscrew gate below and the
+  // squash/stretch + fast-gate block further down.
+  const absVelocity = useTransform(velocity, (v) => Math.abs(v))
+
+  // --- Rocket: corkscrew wobble — sine off real time, amplitude-gated by
+  // sustained |velocity| (see the const block above for why this spring is
+  // deliberately slow). ---
+  const corkscrewGateRaw = useTransform(absVelocity, CORKSCREW_GATE_RANGE, [0, 1], {
+    clamp: true,
+  })
+  const corkscrewGate = useSpring(corkscrewGateRaw, CORKSCREW_GATE_SPRING)
+  const corkscrew = useTransform(
+    [time, corkscrewGate],
+    ([t, gate]) => Math.sin((t as number) / 140) * 10 * (gate as number),
+  )
+
+  const rocketRotate = useTransform(
+    [flip, lean, corkscrew],
+    ([flipDeg, leanDeg, corkscrewDeg]) => (flipDeg as number) + (leanDeg as number) + (corkscrewDeg as number),
+  )
   const planeRotate = useTransform(
-    [roll, bank],
-    ([rollDeg, bankDeg]) => (rollDeg as number) + (bankDeg as number),
+    [roll, bank, loopRotate, waggleSpring],
+    ([rollDeg, bankDeg, loopDeg, waggleDeg]) =>
+      (rollDeg as number) + (bankDeg as number) + (loopDeg as number) + (waggleDeg as number),
   )
 
   // --- Flame flare + trailing puffs (rocket only), all keyed off |velocity| ---
@@ -271,6 +443,10 @@ export function ScrollRocket() {
     { clamp: true },
   )
   const flameScale = useSpring(flameScaleRaw, FLAME_SPRING)
+  const finalFlameScale = useTransform(
+    [flameScale, flameBurstSpring],
+    ([scale, burst]) => (scale as number) + (burst as number),
+  )
   const puff1 = useSpring(flameScaleRaw, PUFF_SPRINGS[0])
   const puff2 = useSpring(flameScaleRaw, PUFF_SPRINGS[1])
   const puff3 = useSpring(flameScaleRaw, PUFF_SPRINGS[2])
@@ -281,12 +457,23 @@ export function ScrollRocket() {
   const puff3Size = useTransform(puff3, [0.35, 1.4], ['2px', '5px'])
   const puff3Opacity = useTransform(puff3, [0.35, 1.4], [0.1, 0.35])
 
-  // --- Squash & stretch (rocket only) + fast-gate (both), keyed off |velocity| ---
-  const absVelocity = useTransform(velocity, (v) => Math.abs(v))
+  // --- Squash & stretch (rocket only), keyed off |velocity| (absVelocity
+  // computed above, shared with the corkscrew gate) ---
   const squashYRaw = useTransform(absVelocity, [0, VELOCITY_RANGE], [1, 1.12], { clamp: true })
   const stretchXRaw = useTransform(absVelocity, [0, VELOCITY_RANGE], [1, 0.94], { clamp: true })
   const squashY = useSpring(squashYRaw, SQUASH_SPRING)
   const stretchX = useSpring(stretchXRaw, SQUASH_SPRING)
+  // Touchdown bounce multiplies onto the velocity-driven squash/stretch
+  // above rather than replacing it, so a landing mid-fast-scroll still shows
+  // both effects composed.
+  const finalScaleY = useTransform(
+    [squashY, landingScaleY],
+    ([squash, bounce]) => (squash as number) * (bounce as number),
+  )
+  const finalScaleX = useTransform(
+    [stretchX, landingScaleX],
+    ([stretch, bounce]) => (stretch as number) * (bounce as number),
+  )
   // Gate stays at 0 through the somersault/roll dead zone and only ramps up
   // once scroll is clearly fast, so sparkles/dashes read as a "moving fast"
   // tell rather than firing on every idle jitter.
@@ -309,7 +496,7 @@ export function ScrollRocket() {
       <motion.div className="absolute right-12 top-0" style={{ x, y }}>
         {isDark ? (
           <motion.div
-            style={{ rotate: rocketRotate, scaleY: squashY, scaleX: stretchX }}
+            style={{ rotate: rocketRotate, scaleY: finalScaleY, scaleX: finalScaleX }}
             className="relative"
           >
             {/* Idle hover-bob: plain CSS keyframe on an inner wrapper, nested
@@ -330,7 +517,7 @@ export function ScrollRocket() {
                     flicker class rides underneath the JS-driven scale, keeping
                     the flame alive even when scroll velocity is flat. */}
                 <motion.g
-                  style={{ scaleY: flameScale, originY: 0 }}
+                  style={{ scaleY: finalFlameScale, originY: 0 }}
                   className="scroll-rocket-flame-flicker"
                 >
                   <path d="M9 48 Q16 57 16 63 Q16 57 23 48 Z" fill="var(--color-accent-soft)" opacity="0.55" />
@@ -403,63 +590,69 @@ export function ScrollRocket() {
             </div>
           </motion.div>
         ) : (
-          <motion.div style={{ rotate: planeRotate }} className="relative">
-            {/* Idle sway: same "dwarfed by real motion" trick as the rocket's
-                idle-bob — nested inside the rotate motion.div so it composes
-                with the JS-driven bank/roll instead of fighting them. */}
-            <div className="paper-plane-idle-sway relative">
-              <svg viewBox="0 0 40 56" className="relative h-14 w-10" fill="none" aria-hidden="true">
-                {/* Left wing — white paper face. */}
-                <path
-                  d="M20 4 L3 44 L20 34 Z"
-                  fill="var(--color-surface-raised)"
-                  stroke="var(--color-ink)"
-                  strokeOpacity="0.18"
-                  strokeWidth="1"
-                />
-                {/* Right wing — warm accent-soft paper face. */}
-                <path
-                  d="M20 4 L37 44 L20 34 Z"
-                  fill="var(--color-accent-soft)"
-                  stroke="var(--color-ink)"
-                  strokeOpacity="0.18"
-                  strokeWidth="1"
-                />
-                {/* Crease line down the spine. */}
-                <line
-                  x1="20"
-                  y1="4"
-                  x2="20"
-                  y2="34"
-                  stroke="var(--color-ink)"
-                  strokeOpacity="0.3"
-                  strokeWidth="1"
-                />
-                {/* Folded tail fin — accent. */}
-                <path d="M20 34 L13 44 L20 40 L27 44 Z" fill="var(--color-accent)" />
-              </svg>
-
-              {/* Dashed contrail — small dash marks trailing the tail, each
-                  looping its own CSS translate+fade continuously; the whole
-                  group's opacity is the same fastGateOpacity spring the
-                  rocket's sparkles use, so it only reads as visible while the
-                  plane is moving fast (the sparkle-gating pattern, reused). */}
-              <motion.div className="absolute inset-0" style={{ opacity: fastGateOpacity }}>
-                {PLANE_DASHES.map((dash, i) => (
-                  <span
-                    key={i}
-                    className="paper-plane-dash"
-                    style={{
-                      left: `${dash.left}px`,
-                      top: `${dash.top}px`,
-                      width: `${dash.width}px`,
-                      animationDuration: `${dash.duration}s`,
-                      animationDelay: `${dash.delay}s`,
-                    }}
+          // Loop-the-loop's circular translate detour lives on its own
+          // nested wrapper (plain px x/y) rather than merged into the outer
+          // vw/vh position spring — sidesteps any unit mismatch, and keeps
+          // this wrapper's rotate purely roll+bank+loop-spin+waggle.
+          <motion.div style={{ x: loopOffsetX, y: loopOffsetY }}>
+            <motion.div style={{ rotate: planeRotate }} className="relative">
+              {/* Idle sway: same "dwarfed by real motion" trick as the rocket's
+                  idle-bob — nested inside the rotate motion.div so it composes
+                  with the JS-driven bank/roll instead of fighting them. */}
+              <div className="paper-plane-idle-sway relative">
+                <svg viewBox="0 0 40 56" className="relative h-14 w-10" fill="none" aria-hidden="true">
+                  {/* Left wing — white paper face. */}
+                  <path
+                    d="M20 4 L3 44 L20 34 Z"
+                    fill="var(--color-surface-raised)"
+                    stroke="var(--color-ink)"
+                    strokeOpacity="0.18"
+                    strokeWidth="1"
                   />
-                ))}
-              </motion.div>
-            </div>
+                  {/* Right wing — warm accent-soft paper face. */}
+                  <path
+                    d="M20 4 L37 44 L20 34 Z"
+                    fill="var(--color-accent-soft)"
+                    stroke="var(--color-ink)"
+                    strokeOpacity="0.18"
+                    strokeWidth="1"
+                  />
+                  {/* Crease line down the spine. */}
+                  <line
+                    x1="20"
+                    y1="4"
+                    x2="20"
+                    y2="34"
+                    stroke="var(--color-ink)"
+                    strokeOpacity="0.3"
+                    strokeWidth="1"
+                  />
+                  {/* Folded tail fin — accent. */}
+                  <path d="M20 34 L13 44 L20 40 L27 44 Z" fill="var(--color-accent)" />
+                </svg>
+
+                {/* Dashed contrail — small dash marks trailing the tail, each
+                    looping its own CSS translate+fade continuously; the whole
+                    group's opacity is the same fastGateOpacity spring the
+                    rocket's sparkles use, so it only reads as visible while the
+                    plane is moving fast (the sparkle-gating pattern, reused). */}
+                <motion.div className="absolute inset-0" style={{ opacity: fastGateOpacity }}>
+                  {PLANE_DASHES.map((dash, i) => (
+                    <span
+                      key={i}
+                      className="paper-plane-dash"
+                      style={{
+                        left: `${dash.left}px`,
+                        top: `${dash.top}px`,
+                        width: `${dash.width}px`,
+                        animationDuration: `${dash.duration}s`,
+                        animationDelay: `${dash.delay}s`,
+                      }}
+                    />
+                  ))}
+                </motion.div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </motion.div>

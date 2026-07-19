@@ -232,7 +232,7 @@ export function MusicPlayer() {
                     )}
                   </span>
 
-                  <span className="text-right text-xs font-medium tabular-nums text-ink-muted">
+                  <span className="font-numeric text-right text-xs font-medium tabular-nums text-ink-muted">
                     {formatTime(track.durationSec)}
                   </span>
                 </motion.button>

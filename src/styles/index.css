@@ -242,6 +242,48 @@
   --bubble-rim: rgba(255, 240, 220, 0.06);
 }
 
+/*
+ * Mode-matched typography (v5 pass) — `--app-font` is mode-only, never
+ * theme-scoped: Chill gets Quicksand (rounded, friendly numerals/
+ * letterforms that match the bubbles/plane-illustration aesthetic), Focus
+ * stays 100% Inter. Living here beside the mode color-token blocks (rather
+ * than inside the [data-theme] blocks below) makes that "mode, not theme"
+ * scoping visually obvious in the source. Quicksand falls back to Inter
+ * (then system stacks) so a slow font load never shows a mismatched
+ * generic sans in the meantime.
+ *
+ * Guard rail: Focus's timer digits rely on Inter's tabular-nums lining
+ * figures (TimerDisplay.tsx) — Focus's --app-font is plain Inter, so that
+ * guarantee is untouched. Chill's own numeric displays (music chart
+ * duration labels, dino/snake scores) are pinned back to Inter explicitly
+ * via `.font-numeric` below, since Quicksand's numerals aren't tabular and
+ * would jitter as they update.
+ */
+:root,
+[data-mode="chill"] {
+  --app-font: 'Quicksand', 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+[data-mode="focus"] {
+  --app-font: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/*
+ * Explicit Inter pin for numeric displays that live inside chill (where
+ * --app-font is Quicksand) — track/game scorelines and duration labels
+ * update live, and Quicksand's proportional, non-tabular numerals would
+ * visibly jitter in width every tick/point. Same stack as --font-sans
+ * (Tailwind's font-sans fallback) so it matches Focus's look exactly.
+ * Applied to: MusicPlayer's chart duration labels, DinoRunner's and
+ * SnakeGame's score/high-score lines, and TimerDisplay's timer digits
+ * (belt-and-suspenders — Focus's --app-font is already Inter, but pinning
+ * the digits directly means they stay correct even if TimerDisplay were
+ * ever reused outside Focus).
+ */
+.font-numeric {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
 [data-theme="dark"][data-mode="focus"] {
   /* Brighter cool accent: L=0.72 accent (Y=0.373) vs L=0.14 ink (Y=0.003)
    * -> (0.373+.05)/(0.003+.05) = 8.0:1. */
@@ -629,6 +671,24 @@ html {
 
 .planet-moon-orbit {
   animation: planet-moon-orbit-spin 9s linear infinite;
+}
+
+/*
+ * Companion tricks (v5 pass, focus dark) — moon-orbit speed scales with
+ * |scroll velocity|. CSS `animation-duration` can't be sprung, so
+ * FocusScrollCompanion.tsx imperatively toggles this second class on the
+ * orbit wrapper (via a ref + useMotionValueEvent, not React state — no
+ * re-render) once |velocity| crosses a threshold, and removes it again
+ * below a lower threshold (hysteresis, avoids flicker right at the edge).
+ * Chosen over animating a rotation motion value directly because it reuses
+ * the existing always-on CSS loop and its own reduced-motion/L3 handling
+ * verbatim — the "cleaner" of the two options the brief offered. Same
+ * animation-name as the base rule above; only the duration shortens, and
+ * this rule's later source position is what lets it win the cascade when
+ * both classes are present (equal specificity, single class each).
+ */
+.planet-moon-orbit-fast {
+  animation-duration: 2.2s;
 }
 
 .planet-moon {
@@ -1816,7 +1876,7 @@ body * {
 
 body {
   min-height: 100vh;
-  font-family: var(--font-sans);
+  font-family: var(--app-font);
   color: var(--color-ink-muted);
   background-color: #faf9f4;
   background-image:

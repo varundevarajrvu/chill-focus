@@ -297,7 +297,7 @@ export function SnakeGame() {
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <div className="flex w-full items-center justify-between px-1 text-sm text-ink-muted">
+      <div className="font-numeric flex w-full items-center justify-between px-1 text-sm text-ink-muted">
         <span>
           Score: <span className="font-medium text-ink">{score}</span>
         </span>
@@ -324,7 +324,7 @@ export function SnakeGame() {
         {phase === 'game-over' && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface/70 text-center">
             <p className="text-sm font-medium text-ink">Game over</p>
-            <p className="text-xs text-ink-muted">
+            <p className="font-numeric text-xs text-ink-muted">
               Score: {score} · High score: {highScore}
             </p>
           </div>
