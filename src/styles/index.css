@@ -17,22 +17,26 @@
   --ink-muted: oklch(0.47 0.02 80);
 
   /*
-   * Ambient background blobs (BackgroundAmbience.tsx) — warm apricot/gold/
-   * coral, deliberately more saturated since the amp-up pass ("clearly an
-   * animated scene"). Composited at the layer's raised --ambient-opacity cap
-   * of 0.55 (was 0.4), worst case is a blob's own center pixel over paper
-   * (Y≈0.946), via real sRGB relative luminance:
-   *   #ffcf94 (apricot) Y_full = 0.680 -> Y_comp = 0.55*0.680+0.45*0.946 = 0.800
-   *   #ffdd7e (gold)    Y_full = 0.745 -> Y_comp = 0.835
-   *   #ffb3a1 (coral)   Y_full = 0.561 -> Y_comp = 0.734  <- tightest of the 3
-   * Contrast vs ink-muted text (chill light, Y≈0.104): 5.52 / 5.75 / 5.09:1
-   * — all clear 4.5:1 (headroom deliberately spent for visibility; this
-   * pass's budget floor is ~4.6:1 for the worst pair anywhere in the file).
-   * Never read these as bg-accent substitutes — they are decoration-only.
+   * Ambient background blobs (BackgroundAmbience.tsx) — light-theme cohesion
+   * rework: retuned from punchy apricot/gold/coral (which, at the amp-up
+   * pass's larger scale, read as scattered solid-orange circles rather than
+   * atmosphere) to lower-chroma warm pastels — soft peach cream / butter gold
+   * / dusty rose. Real sRGB relative luminance, composited at the layer's
+   * --ambient-opacity (0.55) against paper (Y≈0.946):
+   *   #f5dcc0 (peach cream) Y_full = 0.744 -> Y_comp = 0.55*0.744+0.45*0.946 = 0.835
+   *   #f3e3b8 (butter gold) Y_full = 0.775 -> Y_comp = 0.852
+   *   #f0cfc8 (dusty rose)  Y_full = 0.673 -> Y_comp = 0.796  <- tightest of the 3
+   * Contrast vs ink-muted text (chill light, Y≈0.104): 5.75 / 5.86 / 5.49:1
+   * — all clear 4.5:1. The size/falloff/anchor overrides that make these read
+   * as corner washes instead of dots live in the `[data-theme="light"]
+   * .ambient-blob-*` rules below (they only change extent/position, not the
+   * worst-case center-pixel color, so this contrast math still applies
+   * unchanged there). Never read these as bg-accent substitutes — they are
+   * decoration-only.
    */
-  --ambient-1: #ffcf94;
-  --ambient-2: #ffdd7e;
-  --ambient-3: #ffb3a1;
+  --ambient-1: #f5dcc0;
+  --ambient-2: #f3e3b8;
+  --ambient-3: #f0cfc8;
 
   /*
    * Drifting motes (BackgroundAmbience.tsx, Feature 4) — warm accent-tinted
@@ -47,23 +51,43 @@
   --mote: #f7b871;
 
   /*
-   * Lava-lamp bubbles (BackgroundAmbience.tsx, chill-only) — saturated
-   * peach/orange since the amp-up pass, composited through the shared
-   * --ambient-opacity (0.55): Y_full(#ffb066) = 0.5327 -> Y_composite =
-   * 0.55*0.5327 + 0.45*0.946 (paper) = 0.719. Contrast vs ink-muted text
-   * (chill light, Y≈0.104) = (0.719+.05)/(0.104+.05) = 4.99:1 — clears
-   * 4.5:1, even though bubbles now render up to 220px, because the
-   * radial-gradient's own falloff means only the bubble's exact center
-   * pixel ever reaches this worst case.
+   * Lava-lamp bubbles (BackgroundAmbience.tsx, chill-only) — this base
+   * --bubble token is now DARK-reached-through-cascade only in practice: the
+   * light-theme cohesion rework gives light mode its own three warm pastel
+   * tones (--bubble-peach/-rose/-gold below) applied per-bubble via
+   * `[data-theme="light"] .bubble:nth-of-type(n)` overrides further down this
+   * file, so light bubbles no longer read as identical solid-orange dots.
+   * This --bubble hex stays as the fallback for any context that doesn't hit
+   * one of those nth-of-type rules (there shouldn't be one, since every
+   * visible light bubble is covered) and is what dark mode's own override
+   * (further down, `[data-theme="dark"][data-mode="chill"] --bubble`)
+   * replaces anyway. Composited through the shared --ambient-opacity (0.55):
+   * Y_full(#ffb066) = 0.5327 -> Y_composite = 0.719. Contrast vs ink-muted
+   * text (chill light, Y≈0.104) = 4.99:1 — clears 4.5:1.
    *
    * --bubble-rim is the lighter "orb rim" highlight stop (amp-up pass) —
    * pure white in light mode only ever pushes the composite *toward* (in
    * fact past) bare paper: Y_comp = 0.55*0.55*1.0 + (1-0.3025)*0.946 =
    * 0.962 vs paper's own 0.946, i.e. it *raises* contrast vs dark text
-   * (6.57:1 at the rim's own peak) — always safe in light mode.
+   * (6.57:1 at the rim's own peak) — always safe in light mode. Kept as the
+   * rim tone for all three new light tones too (the brief asks to keep the
+   * rim highlight).
+   *
+   * --bubble-peach/-rose/-gold (light-theme cohesion rework): three
+   * lower-chroma warm pastel tones so light's five visible bubbles read as
+   * distinct characters (peach / soft rose / pale gold) rather than
+   * identical dots. Real sRGB relative luminance, composited at the same
+   * 0.55 --ambient-opacity against paper (Y≈0.946):
+   *   #f8cda0 (peach) Y_full = 0.661 -> Y_comp = 0.790 -> contrast 5.45:1
+   *   #f3c2bf (rose)  Y_full = 0.614 -> Y_comp = 0.764 -> contrast 5.28:1
+   *   #f6dba0 (gold)  Y_full = 0.728 -> Y_comp = 0.826 -> contrast 5.69:1
+   * (vs ink-muted text, chill light, Y≈0.104). All clear 4.5:1.
    */
   --bubble: #ffb066;
   --bubble-rim: rgba(255, 255, 255, 0.55);
+  --bubble-peach: #f8cda0;
+  --bubble-rose: #f3c2bf;
+  --bubble-gold: #f6dba0;
 }
 
 [data-mode="focus"] {
@@ -76,17 +100,21 @@
   --ink: oklch(0.3 0.015 235);
   --ink-muted: oklch(0.46 0.015 235);
 
-  /* Ambient background blobs — sky blue/violet-slate/cyan, more saturated
-   * since the amp-up pass. Same reasoning as the chill trio above, at the
-   * shared 0.55 --ambient-opacity, worst case blob center over paper
-   * (Y≈0.946), contrast vs focus light ink-muted (Y≈0.097):
-   *   #a8c8ec (sky)          Y_full = 0.557 -> Y_comp = 0.732 -> 5.32:1
-   *   #b7c0d9 (violet-slate) Y_full = 0.528 -> Y_comp = 0.716 -> 5.21:1
-   *   #9fdfda (cyan)         Y_full = 0.652 -> Y_comp = 0.784 -> 5.68:1
-   * All clear 4.5:1. */
-  --ambient-1: #a8c8ec;
-  --ambient-2: #b7c0d9;
-  --ambient-3: #9fdfda;
+  /* Ambient background blobs — light-theme cohesion rework: retuned from
+   * saturated sky blue/violet-slate/cyan to lower-chroma cool pastels (soft
+   * powder sky / periwinkle-slate / seafoam), matching the same
+   * pastel-atmosphere direction as chill's trio above. Same 0.55
+   * --ambient-opacity, worst case blob center over paper (Y≈0.946), contrast
+   * vs focus light ink-muted (Y≈0.097):
+   *   #cfe0f5 (powder sky)      Y_full = 0.732 -> Y_comp = 0.829 -> 5.98:1
+   *   #d7d9ea (periwinkle-slate) Y_full = 0.700 -> Y_comp = 0.811 -> 5.86:1
+   *   #cdeae6 (seafoam)         Y_full = 0.775 -> Y_comp = 0.852 -> 6.14:1
+   * All clear 4.5:1. The size/falloff/anchor overrides live in the
+   * `[data-theme="light"] .ambient-blob-*` rules below (extent/position
+   * only — this contrast math is unaffected there). */
+  --ambient-1: #cfe0f5;
+  --ambient-2: #d7d9ea;
+  --ambient-3: #cdeae6;
 
   /* Cool accent-tinted mote, more saturated since the amp-up pass: hex
    * #a9cdef -> Y≈0.583; composite at 0.55 opacity vs paper (0.946) = 0.747;
@@ -473,53 +501,141 @@ html {
 }
 
 /*
- * FocusScrollCompanion's lantern-orb (amp-up pass, focus-only) — idle
- * breathing pulse (scale on the core disc, opacity swell on the outer halo),
- * both on a fixed 7s cycle (see FocusScrollCompanion.tsx for why this doesn't
- * ride --ring-cycle). The component itself renders nothing under
- * prefers-reduced-motion or outside focus mode, so no extra guard is needed
- * here, same pattern as ScrollRocket's own CSS-only decorations.
+ * Paper plane (four-companions redesign, chill LIGHT only) — idle sway
+ * (translateY + a small rotate) nested inside ScrollRocket's rotate/bank
+ * motion.div, same "dwarfed by real motion until scrolling stops" trick the
+ * rocket's own idle-bob relies on. The component itself renders nothing
+ * under prefers-reduced-motion, so no extra guard is needed here, same
+ * pattern as every other ScrollRocket CSS-only decoration.
  */
-@keyframes focus-lantern-pulse-core {
+@keyframes paper-plane-idle-sway {
   0%,
   100% {
-    transform: scale(1);
+    transform: translateY(0) rotate(0deg);
   }
   50% {
-    transform: scale(1.06);
+    transform: translateY(-4px) rotate(-3deg);
   }
 }
 
-.focus-lantern-core {
-  animation: focus-lantern-pulse-core 7s ease-in-out infinite;
+.paper-plane-idle-sway {
+  animation: paper-plane-idle-sway 4s ease-in-out infinite;
 }
 
-@keyframes focus-lantern-pulse-halo {
+/*
+ * Paper plane's dashed contrail (chill LIGHT only) — small dash marks that
+ * emit from behind the tail and fade, reusing the rocket sparkles' emit-fade
+ * shape but as short horizontal dashes rather than dots. Visibility of the
+ * whole group is gated in JS (fastGateOpacity, shared with the rocket's own
+ * sparkle gate — see ScrollRocket.tsx), so the dashes themselves need no
+ * reduced-motion guard beyond the component's existing bail-out.
+ */
+@keyframes paper-plane-dash-fade {
+  0% {
+    transform: translateY(0) scaleX(0.4);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(14px) scaleX(1);
+    opacity: 0;
+  }
+}
+
+.paper-plane-dash {
+  position: absolute;
+  height: 2px;
+  border-radius: 9999px;
+  background: var(--color-accent-soft);
+  animation-name: paper-plane-dash-fade;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/*
+ * Hot-air balloon (four-companions redesign, focus LIGHT only) — idle: a
+ * slow 8s sway (small rotate) + subtle vertical drift, nested inside
+ * FocusScrollCompanion's rotate motion.div so it composes with the JS-driven
+ * pendulum sway instead of fighting it (same trick as the rocket/plane's own
+ * idle animations above). The component itself renders nothing under
+ * prefers-reduced-motion or outside focus mode, so no extra guard is needed.
+ */
+@keyframes focus-balloon-idle-drift {
   0%,
   100% {
-    opacity: 0.35;
+    transform: translateY(0) rotate(0deg);
   }
-  50% {
-    opacity: 0.65;
+  25% {
+    transform: translateY(-3px) rotate(1deg);
+  }
+  75% {
+    transform: translateY(3px) rotate(-1deg);
   }
 }
 
-.focus-lantern-halo {
-  background: radial-gradient(circle, var(--color-accent-soft) 0%, transparent 72%);
-  animation: focus-lantern-pulse-halo 7s ease-in-out infinite;
+.focus-balloon-idle-sway {
+  animation: focus-balloon-idle-drift 8s ease-in-out infinite;
 }
 
 /*
  * Faint dotted vertical trajectory hint — the one thing the brief allows in
  * focus that it doesn't in chill (a visible guide reads calm/intentional
- * here, cluttered next to the rocket's wavy S-curve). Purely static: no
- * animation, so no reduced-motion handling needed beyond the component
- * itself rendering nothing in that case.
+ * here, cluttered next to the plane/rocket's wavy S-curve). Balloon (light)
+ * only — the dark ringed planet deliberately has no rail (see
+ * FocusScrollCompanion.tsx file header for why). Purely static: no animation,
+ * so no reduced-motion handling needed beyond the component itself rendering
+ * nothing in that case.
  */
-.focus-lantern-trail {
+.focus-balloon-trail {
   width: 0;
   border-left: 2px dotted var(--color-ink-muted);
   opacity: 0.18;
+}
+
+/*
+ * Ringed planet (four-companions redesign, focus DARK only, replaces the
+ * retired lantern-orb) — the ring glints on a slow opacity shimmer, and a
+ * small moon orbits continuously on a 9s CSS loop regardless of scroll
+ * position, which is what keeps a small static sphere from reading as a
+ * "generic dot" the way the old lantern did. The component itself renders
+ * nothing under prefers-reduced-motion or outside focus mode, so no extra
+ * guard is needed here.
+ */
+@keyframes planet-ring-glint {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.planet-ring {
+  animation: planet-ring-glint 6s ease-in-out infinite;
+}
+
+@keyframes planet-moon-orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.planet-moon-orbit {
+  animation: planet-moon-orbit-spin 9s linear infinite;
+}
+
+.planet-moon {
+  width: 6px;
+  height: 6px;
+  background: var(--color-accent-soft);
+  box-shadow: 0 0 3px var(--shadow-tint);
 }
 
 /*
@@ -735,6 +851,57 @@ body * {
   animation-name: ambient-drift-3;
   animation-duration: 30s;
   animation-delay: -9s;
+}
+
+/*
+ * Light-theme cohesion rework: the base rules above (shared with dark,
+ * untouched) read fine at dark's smaller/denser look, but at light's amp-up
+ * palette the same size/falloff made three same-sized blobs look like
+ * "scattered solid circles" rather than atmosphere. These `[data-theme=
+ * "light"]`-scoped overrides only change extent, falloff distance, and
+ * anchor position — same elements, same keyframes (ambient-drift-1/2/3
+ * above, untouched), same --ambient-1/2/3 tokens (retuned to pastels above,
+ * whose contrast math already accounts for this) — so dark is not affected
+ * by anything in this block, and the worst-case center-pixel contrast math
+ * on the tokens above is unchanged (falloff distance and position affect
+ * where a blob fades out, not the color at its own center).
+ *
+ * Sizing pushed into the 900-1400px range the brief asks for (each capped by
+ * its own max-width/height below vw so it doesn't grow unbounded on huge
+ * monitors), softer falloff (transparent at 55-58% instead of 70%) so the
+ * edge dissolves gradually instead of reading as a disc's boundary, and each
+ * blob's anchor pushed further past its own corner/edge (bigger negative
+ * offsets) so more of its bulk sits off-canvas — only the soft inner wash
+ * shows on-screen, reading as a corner glow rather than a floating ball.
+ */
+[data-theme="light"] .ambient-blob-1 {
+  top: -30%;
+  left: -26%;
+  width: 78vw;
+  height: 78vw;
+  max-width: 1100px;
+  max-height: 1100px;
+  background: radial-gradient(circle at 50% 50%, var(--ambient-1) 0%, transparent 58%);
+}
+
+[data-theme="light"] .ambient-blob-2 {
+  top: 24%;
+  right: -32%;
+  width: 72vw;
+  height: 72vw;
+  max-width: 1300px;
+  max-height: 1300px;
+  background: radial-gradient(circle at 50% 50%, var(--ambient-2) 0%, transparent 56%);
+}
+
+[data-theme="light"] .ambient-blob-3 {
+  bottom: -34%;
+  left: -10%;
+  width: 82vw;
+  height: 82vw;
+  max-width: 1400px;
+  max-height: 1400px;
+  background: radial-gradient(circle at 50% 50%, var(--ambient-3) 0%, transparent 60%);
 }
 
 /* Chill reads slightly livelier than focus — shorter durations only. */
@@ -1082,20 +1249,27 @@ body * {
  * [data-mode="chill"]` via `display`, same hide-by-default pattern as every
  * other gated layer in this file, just keyed off theme+mode together.
  *
- * Contrast ("clouds are the risk" per the brief): fill #ecdfc4 is a warm
- * tan deliberately a couple steps off the paper background (#faf9f4) — dark
- * enough to actually read as a cloud shape rather than disappearing into the
- * paper, while staying inside budget. Real WCAG sRGB relative luminance:
- * Y_full(#ecdfc4) = 0.746 vs paper Y = 0.946. Composited through the shared
- * --ambient-opacity (0.55): Y_composite = 0.55*0.746 + 0.45*0.946 = 0.836.
- * Contrast vs ink-muted text (chill light, Y≈0.104) = (0.836+.05)/(0.104+.05)
- * = 5.75:1 — clears 4.5:1 with real margin (inside this file's established
- * ~4.6:1 floor for deliberately-spent headroom). Do not darken this hex
- * further without re-deriving.
+ * Contrast (light-theme cohesion rework — clouds retinted): the old fill
+ * (#ecdfc4, a warm tan) sat beige-gray against the newly-pastel blob wash —
+ * mismatched, per the brief. Retinted to a warm-white (#fdf7ec, close to
+ * paper on purpose — a real cloud's body is bright, not tan) plus a
+ * barely-there warm-gray stroke (#d9c9a8 at 35% opacity, see the SVG in
+ * BackgroundAmbience.tsx) so the shape still reads via its edge even though
+ * the fill itself nearly matches the page. Layer opacity also dropped
+ * (0.55 -> 0.42, "slightly lower" per the brief) since a near-white fill at
+ * the old 0.55 read almost identically to bare paper.
+ * Real WCAG sRGB relative luminance: Y_full(#fdf7ec) = 0.935 vs paper Y =
+ * 0.946. Composited at the new 0.42: Y_composite = 0.42*0.935 + 0.58*0.946 =
+ * 0.942. Contrast vs ink-muted text (chill light, Y≈0.104) =
+ * (0.942+.05)/(0.104+.05) = 6.44:1 — clears 4.5:1 with more margin than
+ * before (a fill this close to paper can only ever push contrast *up*
+ * against dark text, never down, so this pairing is safe by construction).
+ * Do not brighten this hex past white or raise this layer's opacity without
+ * re-deriving.
  */
 .paper-clouds-layer {
   display: none;
-  opacity: var(--ambient-opacity);
+  opacity: 0.42;
   transition: opacity 400ms ease-out;
 }
 
@@ -1219,20 +1393,23 @@ body * {
  * both themes; beams are the light-only bonus on top), gated to
  * `[data-theme="light"][data-mode="focus"]`.
  *
- * Contrast: gradient peak color rgb(175,205,235) -> real WCAG Y_full = 0.588.
- * Effective alpha stacks three multipliers: the layer wrapper's
- * --ambient-opacity (0.55), the keyframe's own peak opacity (0.85, see
- * light-beam-glide below), and the gradient's intrinsic peak alpha (0.6) ->
- * 0.55*0.85*0.6 = 0.2805. Composited over paper (Y=0.946): Y_composite =
- * 0.2805*0.588 + 0.7195*0.946 = 0.846. Contrast vs ink-muted text (focus
- * light, Y≈0.097) = (0.846+.05)/(0.097+.05) = 6.09:1 — clears 4.5:1 with real
- * margin even at this brighter setting (chosen over a fainter one because the
- * headroom allowed it and the brief asks for a visible "wow" layer, not a
- * barely-there one). Note the gradient only reaches this peak alpha along a
- * thin central seam (it fades to transparent within the same 50% of the
- * band's own height on both sides), so the *visible* band reads softer than
- * this worst-case single-pixel number implies. Do not raise the intrinsic
- * alpha past 0.6 or the keyframe peak past 0.85 without re-deriving.
+ * Contrast (light-theme cohesion rework — beams softened + retinted to
+ * harmonize with the new pastel blob wash, and peak opacity dropped ~20% per
+ * the brief): gradient peak color changed from rgb(175,205,235) to
+ * rgb(196,222,245) (matching the new --ambient-1 "powder sky" pastel above),
+ * real WCAG Y_full = 0.706. The gradient itself now has extra intermediate
+ * stops (see light-beam below) so the transparent->peak transition is
+ * gradual rather than a single sharp midpoint, and its intrinsic peak alpha
+ * dropped 0.6 -> 0.5. The keyframe's own peak opacity dropped 0.85 -> 0.68
+ * (light-beam-glide below) — together with the unchanged layer
+ * --ambient-opacity (0.55), effective alpha is now 0.55*0.68*0.5 = 0.187
+ * (was 0.2805). Composited over paper (Y=0.946): Y_composite =
+ * 0.187*0.706 + 0.813*0.946 = 0.902. Contrast vs ink-muted text (focus
+ * light, Y≈0.097) = (0.902+.05)/(0.097+.05) = 6.47:1 — clears 4.5:1 with even
+ * more margin than before (dropping the alpha only ever pushes the composite
+ * closer to paper's own high Y, which can only raise contrast against dark
+ * text, never lower it). Do not raise the intrinsic alpha past 0.5 or the
+ * keyframe peak past 0.68 without re-deriving.
  */
 .light-beams-layer {
   display: none;
@@ -1258,7 +1435,9 @@ body * {
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(175, 205, 235, 0.6) 50%,
+    rgba(196, 222, 245, 0.18) 30%,
+    rgba(196, 222, 245, 0.5) 50%,
+    rgba(196, 222, 245, 0.18) 70%,
     transparent 100%
   );
   animation-name: light-beam-glide;
@@ -1270,21 +1449,23 @@ body * {
 /* Gentle lateral drift within a modest range (not a full traversal — beams
  * stay roughly in place, unlike the clouds/plane) with opacity breathing on
  * the same cycle, seamless loop (0%/100% share transform+opacity, so the
- * restart is invisible even without an off-screen wrap). */
+ * restart is invisible even without an off-screen wrap). Peak dropped
+ * ~20% (0.85 -> 0.68) in the light-theme cohesion rework — see the
+ * .light-beams-layer contrast comment above for the full math. */
 @keyframes light-beam-glide {
   0% {
     transform: translateX(-6vw);
     opacity: 0;
   }
   20% {
-    opacity: 0.55;
+    opacity: 0.44;
   }
   50% {
     transform: translateX(6vw);
-    opacity: 0.85;
+    opacity: 0.68;
   }
   80% {
-    opacity: 0.5;
+    opacity: 0.4;
   }
   100% {
     transform: translateX(-6vw);
@@ -1380,6 +1561,51 @@ body * {
     transform: translate(0, -115vh) scale(1);
     opacity: 0;
   }
+}
+
+/*
+ * Light-theme cohesion rework: chill light previously rendered all 8 bubbles
+ * at the same hue, which at the amp-up pass's larger sizes read as "polka
+ * dots" rather than atmosphere. Light now shows only 5 (three are flagged
+ * `.bubble-extra` in BackgroundAmbience.tsx and hidden here) with hue varied
+ * across the three warm pastel tones defined above (--bubble-peach/-rose/
+ * -gold), picked per DOM position via :nth-of-type so the five visible
+ * bubbles read as distinct characters. Dark is untouched: `.bubble-extra`
+ * only gets hidden under `[data-theme="light"]`, and none of dark's own
+ * --bubble token/gradient is touched by this block, so dark chill still
+ * shows all 8 bubbles at their original single ember hue.
+ *
+ * Specificity note: this hide rule and the base `[data-mode="chill"] .bubble
+ * { display: block }` rule are equal specificity (one attribute + one
+ * class each) — this block wins because it's later in source order, same
+ * "later wins on a tie" reasoning already used elsewhere in this file (e.g.
+ * dark's `[data-theme="dark"][data-mode="chill"]` token overrides rely on
+ * higher specificity instead, since those need to win regardless of order;
+ * here equal specificity + source order is sufficient since this file's
+ * layer ordering isn't reshuffled at runtime).
+ */
+[data-theme="light"] .bubble-extra {
+  display: none;
+}
+
+[data-theme="light"] .bubble:nth-of-type(1),
+[data-theme="light"] .bubble:nth-of-type(6) {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 46%, var(--bubble-rim) 58%, transparent 68%),
+    radial-gradient(circle at 50% 50%, var(--bubble-peach) 0%, transparent 60%);
+}
+
+[data-theme="light"] .bubble:nth-of-type(3),
+[data-theme="light"] .bubble:nth-of-type(8) {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 46%, var(--bubble-rim) 58%, transparent 68%),
+    radial-gradient(circle at 50% 50%, var(--bubble-rose) 0%, transparent 60%);
+}
+
+[data-theme="light"] .bubble:nth-of-type(4) {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 46%, var(--bubble-rim) 58%, transparent 68%),
+    radial-gradient(circle at 50% 50%, var(--bubble-gold) 0%, transparent 60%);
 }
 
 /*

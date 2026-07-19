@@ -65,6 +65,14 @@ import type { CSSProperties } from 'react'
  * inner radial stop near the edge so orbs read as bubbles, not smudges).
  * Gated to `[data-mode="chill"]` in CSS, same pattern as motes/stars.
  *
+ * Light-theme cohesion rework: three of the eight (indices 1, 4, 6 below —
+ * flagged `extra: true`) get an extra `.bubble-extra` class, hidden in CSS
+ * under `[data-theme="light"]` only, so light shows 5 distinct bubbles
+ * instead of 8 identical-hued ones (dark still shows all 8, untouched). The
+ * 5 that stay visible get one of three warm pastel tones (peach/rose/gold)
+ * via `:nth-of-type` selectors in index.css rather than per-instance data
+ * here, since DOM order alone is enough to address them.
+ *
  * Rings: 4 concentric "breathing" circles, FOCUS-ONLY, plus one soft filled
  * center-glow pulse (`.ring-glow`) that swells behind the timer area on the
  * same cycle. Unlike bubbles/motes/stars these need no per-instance data
@@ -86,11 +94,12 @@ import type { CSSProperties } from 'react'
  *   silhouettes (each a small cluster of overlapping SVG ellipses/a rounded
  *   rect — a "paper cutout" look, not a soft blob) drifting the full width of
  *   the viewport at three heights/speeds. Hardcoded array, same discipline as
- *   STARS/MOTES/BUBBLES. Fill is a warm cream just one step off the paper
- *   background (contrast math lives on `.paper-cloud` in index.css) — clouds
- *   are "the risk" per the brief (a shape close in luminance to its own
- *   background must still not crush contrast for any text that scrolls
- *   behind it), so that token was chosen deliberately close to paper.
+ *   STARS/MOTES/BUBBLES. Fill is a warm-white (light-theme cohesion rework —
+ *   retinted from a beige-gray tan that clashed with the new pastel blob
+ *   wash) with a barely-there warm-gray stroke standing in for cloud shading,
+ *   so the shape still reads via its edge even though the fill itself sits
+ *   close to paper (contrast math lives on `.paper-clouds-layer` in
+ *   index.css).
  * - Paper plane (PLANE_DURATION/PLANE_DELAY, light chill only): the daytime
  *   cousin of dark's shooting stars — same pre-rotated-container +
  *   animated-child-translate pattern, one small SVG paper-airplane glyph
@@ -103,6 +112,10 @@ import type { CSSProperties } from 'react'
  *   "sunlight through a window". These render *alongside* the existing
  *   rings/motes rather than replacing them (rings/motes stay the "focus
  *   ambient" layer in both themes; beams are the light-only bonus on top).
+ *   Light-theme cohesion rework: edges softened further (extra gradient
+ *   stops so the transparent->peak transition is gradual) and peak opacity
+ *   dropped ~20%, retinted to match the new pastel blob wash's hue — see
+ *   index.css `.light-beams-layer` for the full contrast math.
  *
  * All three share `--ambient-opacity` on their layer wrapper (same mechanism
  * as every other layer here) and pause at Level 3 the same way blobs/motes
@@ -194,16 +207,22 @@ interface Bubble {
   delay: number
   /** Horizontal sway amplitude in px — sign sets which way it leans first. */
   sway: number
+  /**
+   * Light-theme cohesion rework: flagged bubbles get an extra `.bubble-extra`
+   * class, hidden under `[data-theme="light"]` only (index.css) so light
+   * shows 5 distinct bubbles instead of all 8 — dark is unaffected.
+   */
+  extra?: boolean
 }
 
 const BUBBLES: Bubble[] = [
   { left: 6, size: 120, duration: 34, delay: -6, sway: 48 },
-  { left: 18, size: 180, duration: 40, delay: -20, sway: -56 },
+  { left: 18, size: 180, duration: 40, delay: -20, sway: -56, extra: true },
   { left: 32, size: 90, duration: 24, delay: -14, sway: 42 },
   { left: 46, size: 150, duration: 37, delay: -30, sway: -50 },
-  { left: 60, size: 105, duration: 28, delay: -3, sway: 58 },
+  { left: 60, size: 105, duration: 28, delay: -3, sway: 58, extra: true },
   { left: 72, size: 220, duration: 39, delay: -22, sway: -44 },
-  { left: 84, size: 130, duration: 31, delay: -12, sway: 52 },
+  { left: 84, size: 130, duration: 31, delay: -12, sway: 52, extra: true },
   { left: 93, size: 75, duration: 20, delay: -9, sway: -40 },
 ]
 
@@ -288,7 +307,7 @@ export function BackgroundAmbience() {
         {BUBBLES.map((bubble, i) => (
           <span
             key={i}
-            className="bubble"
+            className={bubble.extra ? 'bubble bubble-extra' : 'bubble'}
             style={
               {
                 left: `${bubble.left}%`,
@@ -339,10 +358,14 @@ export function BackgroundAmbience() {
             }}
           >
             <svg viewBox="0 0 120 50" className="block h-auto w-full" aria-hidden="true">
-              <rect x="14" y="28" width="92" height="18" rx="9" fill="#ecdfc4" />
-              <ellipse cx="30" cy="32" rx="24" ry="15" fill="#ecdfc4" />
-              <ellipse cx="62" cy="21" rx="30" ry="19" fill="#ecdfc4" />
-              <ellipse cx="92" cy="31" rx="22" ry="14" fill="#ecdfc4" />
+              {/* Warm-white fill (light-theme cohesion rework) with a
+                  barely-there warm-gray stroke standing in for cloud
+                  shading — see index.css `.paper-clouds-layer` for the
+                  contrast math on why the fill can sit this close to paper. */}
+              <rect x="14" y="28" width="92" height="18" rx="9" fill="#fdf7ec" stroke="#d9c9a8" strokeOpacity="0.35" strokeWidth="1.2" />
+              <ellipse cx="30" cy="32" rx="24" ry="15" fill="#fdf7ec" stroke="#d9c9a8" strokeOpacity="0.35" strokeWidth="1.2" />
+              <ellipse cx="62" cy="21" rx="30" ry="19" fill="#fdf7ec" stroke="#d9c9a8" strokeOpacity="0.35" strokeWidth="1.2" />
+              <ellipse cx="92" cy="31" rx="22" ry="14" fill="#fdf7ec" stroke="#d9c9a8" strokeOpacity="0.35" strokeWidth="1.2" />
             </svg>
           </span>
         ))}
