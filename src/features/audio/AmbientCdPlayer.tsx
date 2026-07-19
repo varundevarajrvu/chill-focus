@@ -67,7 +67,7 @@ export function AmbientCdPlayer() {
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-3">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Ambient sound</h2>
+        <h2 className="micro-label text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Ambient sound</h2>
 
         <div role="group" aria-label="Ambient track" className="flex flex-col gap-1.5">
           {TRACKS.map((track) => {

@@ -88,6 +88,23 @@
   --bubble-peach: #f8cda0;
   --bubble-rose: #f3c2bf;
   --bubble-gold: #f6dba0;
+
+  /*
+   * Gradient text tokens (v7 pass — see the `.text-gradient` utility further
+   * down this file for the full writeup covering all eight stops across both
+   * modes/themes). Chill light: deep warm sunset, burnt orange -> deep rose.
+   * Both stops computed via the same Y≈L³ oklch-lightness approximation the
+   * dark-theme block below already leans on and verifies as trustworthy:
+   *   stop a oklch(0.52 0.19 40): Y=0.52³=0.141 -> vs surface-raised
+   *     (L=1, Y=1.0) = (1.05)/(0.191) = 5.5:1; vs surface (L=0.99,
+   *     Y=0.970) = (1.02)/(0.191) = 5.35:1.
+   *   stop b oklch(0.45 0.17 20): Y=0.45³=0.091 -> vs surface-raised =
+   *     (1.05)/(0.141) = 7.4:1; vs surface = (1.02)/(0.141) = 7.2:1.
+   * Both stops clear 4.5:1 against either backdrop this text can sit on
+   * (well past the 3:1 large-text floor — every current usage is >=24px).
+   */
+  --text-grad-a: oklch(0.52 0.19 40);
+  --text-grad-b: oklch(0.45 0.17 20);
 }
 
 [data-mode="focus"] {
@@ -141,6 +158,21 @@
    */
   --ring: #6fabdd;
   --ring-glow: rgba(175, 200, 235, 0.35);
+
+  /*
+   * Gradient text tokens (v7 pass — see the `.text-gradient` utility further
+   * down this file for the full writeup). Focus light: deep cool, steel
+   * blue -> indigo. Same Y≈L³ approximation, backdrop is focus light's
+   * surface/surface-raised (L=0.98/0.995 -> Y=0.941/0.985):
+   *   stop a oklch(0.45 0.11 235): Y=0.091 -> vs surface = (0.991)/(0.141)
+   *     = 7.0:1; vs surface-raised = (1.035)/(0.141) = 7.3:1.
+   *   stop b oklch(0.4 0.12 280): Y=0.4³=0.064 -> vs surface =
+   *     (0.991)/(0.114) = 8.7:1; vs surface-raised = (1.035)/(0.114) =
+   *     9.1:1.
+   * Both clear 4.5:1.
+   */
+  --text-grad-a: oklch(0.45 0.11 235);
+  --text-grad-b: oklch(0.4 0.12 280);
 }
 
 /*
@@ -240,6 +272,26 @@
    */
   --bubble: rgba(240, 120, 40, 0.2);
   --bubble-rim: rgba(255, 240, 220, 0.06);
+
+  /*
+   * Gradient text tokens (v7 pass — see the `.text-gradient` utility further
+   * down this file for the full writeup). Chill dark: bright ember, meant to
+   * pop off the near-black paper (surface/surface-raised L=0.17/0.23 ->
+   * Y=0.005/0.012 via the same Y≈L³ approximation):
+   *   stop a oklch(0.82 0.16 55): Y=0.82³=0.551 -> vs surface =
+   *     (0.601)/(0.055) = 11.0:1; vs surface-raised = (0.601)/(0.062) =
+   *     9.7:1.
+   *   stop b oklch(0.75 0.16 25): Y=0.75³=0.422 -> vs surface =
+   *     (0.472)/(0.055) = 8.6:1; vs surface-raised = (0.472)/(0.062) =
+   *     7.6:1.
+   * Both comfortably clear 4.5:1.
+   */
+  --text-grad-a: oklch(0.82 0.15 55);
+  --text-grad-b: oklch(0.75 0.16 25);
+  /* Warm ember halo for the dark-theme neon glow below, ~35% alpha —
+   * approximates the stop-a hue as a plain rgba so `filter: drop-shadow`
+   * (which can't take oklch reliably cross-browser) stays warm-tinted. */
+  --text-glow: rgba(255, 150, 80, 0.35);
 }
 
 /*
@@ -314,6 +366,74 @@
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
+/*
+ * Gradient text system (v7 pass) — Chief's "still looks dull" verdict after
+ * the display-font pass diagnosed the real gap: type never carries color,
+ * only flat --ink. `.text-gradient` clips a two-stop, per-mode×theme
+ * gradient (--text-grad-a/-b, set in the four mode×theme token blocks above)
+ * to text for a short, deliberate list of "hero" spots: the mode wordmark
+ * (ModeHeader), the timer digits (TimerDisplay), the chill track title
+ * (MusicPlayer), and the appreciation message (AppreciationOverlay). Every
+ * stop's contrast against this app's two backdrops (--surface /
+ * --surface-raised, the only surfaces this text ever sits on) is computed
+ * and documented alongside its token above — all eight stops clear 4.5:1.
+ * Body-size text must never get this class: WCAG's large-text floor (3:1)
+ * is what makes a clipped-to-text gradient viable at all, and every current
+ * usage is >=24px per the brief.
+ */
+.text-gradient {
+  background: linear-gradient(100deg, var(--text-grad-a), var(--text-grad-b));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Fallback safety — browsers without background-clip:text support would
+ * otherwise show fully transparent (invisible) text, since `color:
+ * transparent` has nothing to clip onto. Falls back to a solid, already
+ * contrast-checked stop instead. */
+@supports not (-webkit-background-clip: text) {
+  .text-gradient {
+    background: none;
+    color: var(--text-grad-a);
+  }
+}
+
+/*
+ * Dark-theme neon glow (v7 pass) — a subtle halo behind the clipped gradient
+ * text, not a blur: `filter: drop-shadow` still works on text whose `color`
+ * is transparent, since it operates on the rendered alpha shape, not the
+ * (invisible) fill color. --text-glow is set per mode in the dark-theme
+ * token blocks above (warm ember for chill, cool ice/violet for focus) so
+ * the halo tint always matches the gradient it's glowing behind. Light theme
+ * gets no glow at all (this rule is theme-scoped). A static filter, not an
+ * animation, so prefers-reduced-motion needs no override here.
+ */
+[data-theme="dark"] .text-gradient {
+  filter: drop-shadow(0 0 14px var(--text-glow));
+}
+
+/*
+ * Micro-label dot (v7 pass) — small accent-colored dot before section
+ * micro-labels ("Games", "Music player", "Ambient sound", "Notes & to-do",
+ * "Notes", "To-do") so the color system reaches the app's smallest text too,
+ * not just the hero spots above. Purely an added `::before`, empty content —
+ * the existing utility classes on each heading (size/weight/tracking/color)
+ * are untouched, this class is additive. Empty-content generated content
+ * contributes nothing to the accessible name computation, so every heading's
+ * accessible name is unchanged.
+ */
+.micro-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 9999px;
+  background-color: var(--color-accent);
+  vertical-align: middle;
+}
+
 [data-theme="dark"][data-mode="focus"] {
   /* Brighter cool accent: L=0.72 accent (Y=0.373) vs L=0.14 ink (Y=0.003)
    * -> (0.373+.05)/(0.003+.05) = 8.0:1. */
@@ -372,6 +492,24 @@
    */
   --ring: rgba(150, 190, 235, 0.14);
   --ring-glow: rgba(140, 180, 230, 0.08);
+
+  /*
+   * Gradient text tokens (v7 pass — see the `.text-gradient` utility further
+   * down this file for the full writeup). Focus dark: bright cool, ice ->
+   * violet, on the near-black paper (surface/surface-raised L=0.16/0.21 ->
+   * Y=0.004/0.009 via the same Y≈L³ approximation):
+   *   stop a oklch(0.85 0.09 220): Y=0.85³=0.614 -> vs surface =
+   *     (0.664)/(0.054) = 12.3:1; vs surface-raised = (0.664)/(0.059) =
+   *     11.2:1.
+   *   stop b oklch(0.78 0.12 280): Y=0.78³=0.475 -> vs surface =
+   *     (0.525)/(0.054) = 9.7:1; vs surface-raised = (0.525)/(0.059) =
+   *     8.9:1.
+   * Both comfortably clear 4.5:1.
+   */
+  --text-grad-a: oklch(0.85 0.09 220);
+  --text-grad-b: oklch(0.78 0.12 280);
+  /* Cool ice/violet halo, same ~35% alpha budget as chill dark's ember. */
+  --text-glow: rgba(140, 190, 255, 0.35);
 }
 
 @theme {

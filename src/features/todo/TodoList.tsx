@@ -16,7 +16,7 @@ export function TodoList() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">To-do</h3>
+        <h3 className="micro-label text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">To-do</h3>
       </div>
 
       <form

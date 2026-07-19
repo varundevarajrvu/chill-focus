@@ -50,18 +50,25 @@ export function ModeHeader() {
   return (
     <header className="flex items-center justify-between px-6 pt-8 pb-4 sm:px-10 sm:pt-12">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-ink-muted">
+        {/* v7 pass — short accent bar before the eyebrow (16px x 2px, rounded)
+         * so the mode color shows up even at the app's smallest text. Purely
+         * decorative (aria-hidden); the eyebrow's own text content and
+         * accessible name are unchanged. */}
+        <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.32em] text-ink-muted">
+          <span aria-hidden="true" className="inline-block h-0.5 w-4 shrink-0 rounded-full bg-accent" />
           Chill / Focus
         </p>
         <h1
-          className={`font-display mt-1 text-2xl font-bold text-ink sm:text-[2rem] ${
+          className={`text-gradient font-display mt-1 text-4xl font-bold sm:text-5xl ${
             /* Baloo 2 is naturally chunky at 600-700 — font-bold (700) plus
              * normal tracking (dropping the old tight tracking) lets its
              * round letterforms breathe, and leading-snug (vs. the tighter
              * default) gives its taller glyphs room so they don't clip.
              * Space Grotesk wants the opposite treatment: tracking-tight
              * reads sharper on its squarer, more geometric shapes, and it
-             * sits comfortably at the original tighter leading. */
+             * sits comfortably at the original tighter leading. Same leading
+             * choice holds at the v7 pass's larger 4xl/5xl size — neither
+             * face gained new clipping risk from the size bump alone. */
             mode === 'chill' ? 'leading-snug tracking-normal' : 'leading-tight tracking-tight'
           }`}
         >

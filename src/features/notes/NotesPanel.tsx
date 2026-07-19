@@ -8,7 +8,7 @@ export function NotesPanel() {
 
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={inputId} className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
+      <label htmlFor={inputId} className="micro-label text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
         Notes
       </label>
       <textarea

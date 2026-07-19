@@ -18,11 +18,11 @@ export function TimerDisplay() {
 
   return (
     <div className="flex flex-col items-center gap-2 py-4 sm:py-6">
-      <p className="font-display text-xs font-semibold uppercase tracking-[0.32em] text-ink-muted">
+      <p className="font-display text-xs font-semibold uppercase tracking-[0.32em] text-accent">
         {PHASE_LABEL[phase]}
       </p>
       <p
-        className="font-numeric text-[clamp(4.5rem,10vw,6.5rem)] font-extrabold leading-none tabular-nums text-ink"
+        className="text-gradient font-numeric text-[clamp(4.5rem,10vw,6.5rem)] font-extrabold leading-none tabular-nums"
         aria-live="off"
       >
         {mm}:{ss.toString().padStart(2, '0')}

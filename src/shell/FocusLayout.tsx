@@ -75,7 +75,7 @@ function NotesAndTodo() {
           transition={fade}
           className="flex min-h-48 flex-col gap-6 border-t border-ink-muted/10 pt-8 sm:border-t-0 sm:border-l sm:border-ink-muted/10 sm:pl-8 sm:pt-0"
         >
-          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
+          <h2 className="micro-label text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
             Notes &amp; to-do
           </h2>
           <NotesPanel />

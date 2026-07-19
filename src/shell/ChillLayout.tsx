@@ -101,7 +101,7 @@ function GamesCard() {
             className="flex flex-col gap-5"
           >
             <div>
-              <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Games</h2>
+              <h2 className="micro-label text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Games</h2>
               <p className="mt-1 text-sm text-ink-muted">Pick one to play.</p>
             </div>
             {/* 2x2 tile grid — springy tiles, same picker semantics as before

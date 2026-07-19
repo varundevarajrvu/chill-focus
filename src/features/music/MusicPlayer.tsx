@@ -77,9 +77,9 @@ export function MusicPlayer() {
   return (
     <section className="shadow-hero flex flex-col gap-6 rounded-[24px_30px_24px_28px] bg-surface-raised p-6 sm:p-10">
       <div className="flex flex-col items-center gap-1 text-center">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Music player</h2>
+        <h2 className="micro-label text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Music player</h2>
         <p
-          className="font-display mt-2 max-w-full truncate text-2xl font-bold leading-snug text-ink sm:text-3xl"
+          className="text-gradient font-display mt-2 max-w-full truncate text-2xl font-bold leading-snug sm:text-3xl"
           title={`${current.title} — ${current.artist}`}
         >
           {current.title}

@@ -28,7 +28,7 @@ export function TimerPanel() {
       onClick={message ? dismiss : undefined}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Timer</h2>
+        <h2 className="micro-label text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Timer</h2>
         {!hideNonEssential && <LevelSelector />}
       </div>
 
