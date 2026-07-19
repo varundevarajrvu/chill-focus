@@ -126,6 +126,55 @@ import type { CSSProperties } from 'react'
  * live. All three are hidden outright (not just paused) under
  * prefers-reduced-motion, added to the same `!important` block the
  * mote/bubble/ring/shooting-star hide-list already uses.
+ *
+ * "Light needs more" pass (Chief-requested, dark left untouched) — three more
+ * additions, all `[data-theme="light"]`-scoped in CSS:
+ *
+ * - Sky wash (SKY_WASH, both light modes): a single static div, first child
+ *   inside this component's aria-hidden root so it paints behind every other
+ *   layer (blobs, grain, stars, etc.), a fixed gradient band across the top
+ *   ~38vh fading to transparent. No per-instance data (one element, same
+ *   deterministic-static-graphic pattern as the rings above), no animation —
+ *   it's the stage, not the show. Per-mode/theme hue via --sky-a/--sky-b
+ *   (index.css): chill = sunrise peach->rose, focus = morning azure->lavender.
+ *   Contrast (eyebrow text-ink-muted + wordmark gradient text both sit on top
+ *   of this band, per ModeHeader) is computed against the *top* stop (the
+ *   least-diluted, worst-case color before the gradient fades toward paper) —
+ *   see the --sky-a/-b token comments in index.css for the full math; both
+ *   modes clear 4.5:1 with >=0.3 margin.
+ * - Sun (light chill only): SUN_RAY_ANGLES drives 8 evenly-spaced (45deg
+ *   apart) short rays, each a plain span with a *static* inline
+ *   `rotate(angle) translateY(-58px)` transform (the same
+ *   pre-transformed-child trick as the paper-plane/light-beam rotors above,
+ *   just used for a radiating-spoke layout instead of a single diagonal) —
+ *   all 8 sit inside one `.chill-sun-rotor` wrapper that carries the *only*
+ *   animated rotation (60s linear, continuous), so the whole spoke assembly
+ *   visibly turns as one disc. The warm core disc is a sibling rendered after
+ *   the rotor (so it paints on top, hiding the rays' bases under its edge)
+ *   with its own independent scale pulse (1->1.05, 6s ease-in-out) — two
+ *   separate elements each owning one transform, never fighting over the
+ *   `transform` property, same discipline as every other layer in this file.
+ *   Rides --ambient-opacity like the rest of chill's decoration (chill has no
+ *   levels, so the Level 3 branch of that variable is simply unreachable here,
+ *   same non-issue as bubbles/clouds/plane above). Reduced motion freezes
+ *   *only* the animations (`animation: none` on the rotor + core) rather than
+ *   hiding the sun outright — a static sun is a landmark, not motion, whereas
+ *   a frozen mid-drift mote reads as a smudge; see index.css for why those two
+ *   get opposite reduced-motion treatments.
+ * - Sun-glints (GLINTS, light focus only): 14 tiny 4-point sparkle SVGs (a
+ *   diamond-cross path, 6-9px) at hardcoded positions/sizes/timings — same
+ *   never-Math.random() discipline as STARS/MOTES/BUBBLES/CLOUDS — each
+ *   twinkling opacity 0.15->0.7 on its own staggered 5-11s cycle, the daytime
+ *   counterpart to dark's starfield. Gated to
+ *   `[data-theme="light"][data-mode="focus"]` via the wrapper's `display`,
+ *   same hide-by-default pattern as clouds/plane/beams above. Paused (not
+ *   hidden) at Level 3 for the same reason light-beams pause there — a
+ *   twinkling field is livelier than deep-lock focus wants, but this is a
+ *   light-only bonus layer, not the shared ring/mote ambience, so freezing
+ *   rather than removing it matches beams' precedent. Hidden outright under
+ *   prefers-reduced-motion (added to the shared `!important` hide block) —
+ *   a field of frozen sparkles reads as flecked dust, matching the mote/
+ *   shooting-star precedent, not the sun's "static landmark" case above.
  */
 
 interface Star {
@@ -259,9 +308,48 @@ const BEAMS: LightBeam[] = [
   { top: 48, left: -30, rotate: 18, duration: 38, delay: -18 },
 ]
 
+// Light-chill sun (see index.css `.chill-sun` gating) — 8 rays evenly spaced
+// 45deg apart. Each ray's rotate angle is a *static* inline transform (never
+// animated on the ray itself); the shared parent `.chill-sun-rotor` is what
+// spins continuously, same "static per-child transform + one animated
+// wrapper" split the paper-plane/light-beam containers above use.
+const SUN_RAY_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315]
+
+interface Glint {
+  top: number
+  left: number
+  size: number
+  duration: number
+  delay: number
+}
+
+// Light-focus sun-glints (see index.css `.sun-glints-layer` gating) — the
+// daytime counterpart of dark's STARS array, same hardcoded-array discipline
+// (no Math.random() at render). Sizes 6-9px, durations 5-11s per the brief.
+const GLINTS: Glint[] = [
+  { top: 8, left: 15, size: 7, duration: 6, delay: 0 },
+  { top: 20, left: 68, size: 6, duration: 8, delay: 1.5 },
+  { top: 5, left: 40, size: 8, duration: 9, delay: 3 },
+  { top: 30, left: 85, size: 6, duration: 5, delay: 2.2 },
+  { top: 14, left: 92, size: 7, duration: 11, delay: 4 },
+  { top: 42, left: 10, size: 9, duration: 7, delay: 0.8 },
+  { top: 25, left: 30, size: 6, duration: 10, delay: 5.5 },
+  { top: 55, left: 55, size: 7, duration: 6.5, delay: 2.8 },
+  { top: 10, left: 55, size: 8, duration: 9.5, delay: 1.1 },
+  { top: 65, left: 22, size: 6, duration: 8.5, delay: 6 },
+  { top: 35, left: 75, size: 7, duration: 5.5, delay: 3.6 },
+  { top: 48, left: 92, size: 6, duration: 11, delay: 7 },
+  { top: 3, left: 72, size: 9, duration: 7.5, delay: 4.4 },
+  { top: 60, left: 40, size: 8, duration: 10.5, delay: 0.3 },
+]
+
 export function BackgroundAmbience() {
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      {/* First child = painted behind every other layer below (blobs, grain,
+          stars, etc.) — see index.css `.sky-wash` for the gating/gradient and
+          the token comments for the contrast math. Static, no animation. */}
+      <div className="sky-wash absolute inset-x-0 top-0" />
       <div className="ambient-layer absolute inset-0">
         <div className="ambient-blob ambient-blob-1" />
         <div className="ambient-blob ambient-blob-2" />
@@ -390,6 +478,28 @@ export function BackgroundAmbience() {
           </span>
         </div>
       </div>
+      {/* Light-chill sun (see the file header comment above + index.css
+          `.chill-sun*` rules for the full writeup). Positioned top-right via
+          inline left/top percentages, centered on that point via CSS
+          negative margins (same left/top+margin centering trick `.ring`
+          uses above, kept transform-free so the rotor's own animated
+          `transform: rotate()` is the only transform on that subtree). */}
+      <div className="chill-sun absolute" style={{ left: '86%', top: '12%' }}>
+        <div className="chill-sun-rotor absolute inset-0">
+          {SUN_RAY_ANGLES.map((angle) => (
+            <span
+              key={angle}
+              className="chill-sun-ray absolute"
+              style={{ transform: `rotate(${angle}deg) translateY(-58px)` }}
+            />
+          ))}
+        </div>
+        {/* Rendered after the rotor so it paints on top, hiding the rays'
+            bases under the disc's own edge. Its scale-pulse is a fully
+            separate animation from the rotor's rotate above — two elements,
+            two transforms, never composed onto the same property. */}
+        <div className="chill-sun-core absolute" />
+      </div>
       <div className="light-beams-layer absolute inset-0">
         {/* Same pre-rotated-container + animated-child split as the shooting
             stars / paper plane above: the outer div's rotate is a static
@@ -411,6 +521,31 @@ export function BackgroundAmbience() {
               style={{ animationDuration: `${beam.duration}s`, animationDelay: `${beam.delay}s` }}
             />
           </div>
+        ))}
+      </div>
+      <div className="sun-glints-layer absolute inset-0">
+        {/* Light-focus sun-glints — the daytime counterpart of dark's
+            starfield above. Each glint is a small 4-point sparkle (diamond-
+            cross SVG path) twinkling on its own staggered opacity keyframe;
+            see index.css `.sun-glints-layer`/`.sun-glint` for gating,
+            twinkle keyframe, Level 3 pause, and the contrast math. */}
+        {GLINTS.map((glint, i) => (
+          <span
+            key={i}
+            className="sun-glint absolute"
+            style={{
+              top: `${glint.top}%`,
+              left: `${glint.left}%`,
+              width: `${glint.size}px`,
+              height: `${glint.size}px`,
+              animationDuration: `${glint.duration}s`,
+              animationDelay: `${glint.delay}s`,
+            }}
+          >
+            <svg viewBox="0 0 12 12" className="block h-full w-full" aria-hidden="true">
+              <path d="M6 0 L7 5 L12 6 L7 7 L6 12 L5 7 L0 6 L5 5 Z" fill="var(--glint)" />
+            </svg>
+          </span>
         ))}
       </div>
     </div>

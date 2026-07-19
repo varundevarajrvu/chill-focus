@@ -107,6 +107,44 @@
   --text-grad-b: oklch(0.45 0.17 20);
 }
 
+/*
+ * "Light needs more" pass (Chief-requested) — sky wash + sun tokens, light
+ * chill only. Kept as literal hex (like --ambient-1/2/3 above) so the real
+ * WCAG sRGB relative-luminance formula can be run directly rather than
+ * approximated.
+ *
+ * --sky-a/--sky-b feed `.sky-wash` (a static full-width gradient band across
+ * the top ~38vh, see that rule further down) — sunrise: soft peach fading to
+ * pale rose. The wash sits *behind* ModeHeader (eyebrow text-ink-muted,
+ * wordmark .text-gradient), so the worst case is the gradient's own top stop
+ * (--sky-a), evaluated before any dilution toward transparent/paper:
+ *   Y(#ffd0ad) = 0.694 -> contrast vs chill light ink-muted (Y≈0.104) =
+ *     (0.694+.05)/(0.104+.05) = 4.83:1 — clears 4.5:1.
+ *   Y(#ffd2de) = 0.726 -> contrast = 5.04:1 — clears with more margin (the
+ *     rose stop only ever sits further down the band, closer to transparent/
+ *     paper, so it's never the binding constraint).
+ * Wordmark gradient text (large, 3:1 floor) clears by an even wider margin:
+ * --text-grad-b (Y=0.091, the darker of its two stops) vs --sky-a (Y=0.694)
+ * = 5.28:1.
+ *
+ * --sun-core/--sun-mid feed `.chill-sun` (top-right rotating sun, see that
+ * rule further down). Purely decorative (no text ever sits over it), but
+ * computed for consistency with every other token in this file — composited
+ * through --ambient-opacity (0.55) against the *tightest* backdrop the sun
+ * can sit on (the sky wash's own --sky-a, Y=0.694, darker than bare paper):
+ *   sun-core Y_full(#fff2d1) = 0.894 -> Y_comp = 0.55*0.894 + 0.45*0.694 =
+ *     0.804 -> contrast vs ink-muted (Y≈0.104) = 5.54:1.
+ *   sun-mid  Y_full(#ffc95e) = 0.638 -> Y_comp = 0.664 -> contrast = 4.63:1
+ *     (the ray/mid-stop color is the tighter of the two — do not darken past
+ *     this hex without re-deriving). Both clear 4.5:1.
+ */
+[data-theme="light"][data-mode="chill"] {
+  --sky-a: #ffd0ad;
+  --sky-b: #ffd2de;
+  --sun-core: #fff2d1;
+  --sun-mid: #ffc95e;
+}
+
 [data-mode="focus"] {
   --accent: oklch(0.62 0.08 235); /* cool */
   --accent-soft: oklch(0.9 0.03 235);
@@ -173,6 +211,40 @@
    */
   --text-grad-a: oklch(0.45 0.11 235);
   --text-grad-b: oklch(0.4 0.12 280);
+}
+
+/*
+ * "Light needs more" pass (Chief-requested) — sky wash + glint tokens, light
+ * focus only. Same literal-hex convention as the chill block above (real
+ * WCAG sRGB math, not the oklch approximation).
+ *
+ * --sky-a/--sky-b feed `.sky-wash` — morning sky: pale azure fading to
+ * lavender mist. Worst case is the top stop (--sky-a), same reasoning as
+ * chill's sky wash above (least-diluted point, sits directly behind
+ * ModeHeader's eyebrow/wordmark):
+ *   Y(#cfe3f7) = 0.749 -> contrast vs focus light ink-muted (Y≈0.097) =
+ *     (0.749+.05)/(0.097+.05) = 5.44:1 — clears 4.5:1.
+ *   Y(#ded7f5) = 0.707 -> contrast = 5.15:1 — also clears (this mode's rose-
+ *     equivalent stop happens to be slightly darker than chill's, but still
+ *     comfortably over the floor).
+ * Wordmark: --text-grad-b (Y=0.064, darker stop) vs --sky-a (Y=0.749) =
+ * 7.01:1.
+ *
+ * --glint feeds `.sun-glint` (14 tiny twinkling sparkles, see that rule
+ * further down) — pale gold-white, decorative only (never sits under text),
+ * computed for consistency. Its own opacity keyframe (0.15->0.7) is the
+ * *only* alpha in play (glints don't ride --ambient-opacity — see that
+ * rule's comment for why), so the worst case is the keyframe's own peak
+ * (0.7) composited against the tightest backdrop (the sky wash's own
+ * --sky-a, Y=0.749, darker than bare paper):
+ *   Y_full(#fff6e0) = 0.933 -> Y_comp = 0.7*0.933 + 0.3*0.749 = 0.878 ->
+ *   contrast vs ink-muted (Y≈0.097) = 6.30:1 — clears 4.5:1 with a wide
+ *   margin (as expected for a near-white sparkle at its brightest instant).
+ */
+[data-theme="light"][data-mode="focus"] {
+  --sky-a: #cfe3f7;
+  --sky-b: #ded7f5;
+  --glint: #fff6e0;
 }
 
 /*
@@ -552,6 +624,59 @@
     0 1px 1px rgba(0, 0, 0, 0.4),
     0 14px 24px -14px rgba(0, 0, 0, 0.55),
     0 32px 64px -20px var(--shadow-tint);
+}
+
+/*
+ * Light hero hairline edge ("light needs more" pass, Chief-requested,
+ * light-scoped only — dark's box-shadow above is untouched). Both
+ * `.shadow-hero` users (TimerPanel, MusicPlayer) already carry `bg-surface-
+ * raised` as a plain Tailwind utility class on the *same* element, so the
+ * "double background-image + background-clip: padding-box/border-box" trick
+ * the brief floats would mean replacing that existing background rather than
+ * layering on top of it — verified this renders correctly but chose the
+ * safer of the two options instead: a `::after` overlay, sized via `mask`/
+ * `-webkit-mask` (two mask layers XORed so only a 1px ring between the
+ * content-box and border-box edges shows), which never touches the
+ * element's own `background` at all. `position: relative` is added here
+ * (light-scoped) purely so the absolutely-positioned `::after` has this box
+ * as its containing block — a static box with no other positioned
+ * descendants, so it has zero effect on layout or paint order otherwise.
+ * `border-radius: inherit` copies the parent's *asymmetric* per-corner
+ * radius (both users have 4 different corner values) onto the ring exactly.
+ * Gradient stops reuse the existing per-mode `--accent`/`--accent-soft`
+ * tokens via `color-mix(..., transparent)` (never new color tokens — this
+ * is the app's own "add a token, don't hardcode a hue" rule, satisfied by
+ * reusing the token that already carries the mode's hue) at low alpha (35%/
+ * 55%) so the edge reads as a whisper, not a frame. `pointer-events: none`
+ * keeps this purely decorative — the hard requirement that the underlying
+ * card's own clicks/labels are unaffected, verified by screenshot in both
+ * light modes.
+ */
+[data-theme="light"] .shadow-hero {
+  position: relative;
+}
+
+[data-theme="light"] .shadow-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklch, var(--accent) 35%, transparent) 0%,
+    color-mix(in oklch, var(--accent-soft) 55%, transparent) 45%,
+    transparent 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 /*
@@ -992,6 +1117,30 @@ body * {
 }
 
 /*
+ * Sky wash ("light needs more" pass, both light modes, distinct —
+ * BackgroundAmbience.tsx) — a static full-width gradient band across the top
+ * ~38vh, fading to transparent by its own bottom edge. Rendered as the very
+ * first child inside the ambience wrapper (see the component), so it paints
+ * behind the aurora blobs/grain/stars/etc. below. No animation — it's the
+ * stage, not the show — so it needs no prefers-reduced-motion handling.
+ * Per-mode/theme hue via --sky-a/--sky-b (chill: sunrise peach->rose; focus:
+ * morning azure->lavender mist — see those tokens' own blocks above for the
+ * full contrast math against the eyebrow/wordmark text this wash sits
+ * behind). Hidden in dark (both modes) via `display`, same hide-by-default
+ * pattern as every other theme/mode-gated layer in this file — dark's own
+ * background is untouched.
+ */
+.sky-wash {
+  display: none;
+  height: 38vh;
+  background: linear-gradient(to bottom, var(--sky-a) 0%, var(--sky-b) 55%, transparent 100%);
+}
+
+[data-theme="light"] .sky-wash {
+  display: block;
+}
+
+/*
  * Ambient background (BackgroundAmbience.tsx) — three large soft "aurora"
  * blobs rendered fixed behind the app, above the body's paper grid. Pure
  * pre-soft radial gradients (no filter:blur — GPU-cheap) animated on
@@ -1392,7 +1541,8 @@ body * {
   .shooting-stars-layer,
   .paper-cloud,
   .paper-plane,
-  .light-beam-rotor {
+  .light-beam-rotor,
+  .sun-glint {
     display: none !important;
   }
 }
@@ -1611,6 +1761,109 @@ body * {
 }
 
 /*
+ * Light-chill sun ("light needs more" pass, LIGHT CHILL ONLY —
+ * shell/BackgroundAmbience.tsx). Top-right corner (~86% left / 12% top,
+ * inline style on `.chill-sun`), centered on that point via negative
+ * left/top margins below (same centering trick `.ring` uses further down —
+ * transform stays free for the rotor's own animated rotate). Two independent
+ * animated pieces, each owning one transform (never composed onto the same
+ * element/property):
+ *   - `.chill-sun-rotor` — 8 short rays (SUN_RAY_ANGLES, each a *static*
+ *     inline `rotate(angle) translateY(-58px)` on its own span — the classic
+ *     "rotate then translate along the local axis" radiating-spoke trick)
+ *     spun together continuously via one 60s linear rotation.
+ *   - `.chill-sun-core` — the warm disc, rendered as a sibling *after* the
+ *     rotor (so it paints on top, hiding the rays' bases under its own
+ *     edge), pulsing scale 1->1.05 on a separate 6s ease-in-out loop.
+ * Rides --ambient-opacity like every other decorative layer here (chill
+ * never carries `data-level`, so the Level 3 branch of that variable is
+ * simply unreachable — same non-issue as bubbles/clouds/plane/beams above).
+ * Gated to `[data-theme="light"][data-mode="chill"]` via `display`, same
+ * hide-by-default pattern as clouds/plane/beams.
+ */
+.chill-sun {
+  display: none;
+  width: 168px;
+  height: 168px;
+  margin-left: -84px;
+  margin-top: -84px;
+  opacity: var(--ambient-opacity);
+}
+
+[data-theme="light"][data-mode="chill"] .chill-sun {
+  display: block;
+}
+
+.chill-sun-ray {
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 26px;
+  margin-left: -2px;
+  margin-top: -13px;
+  border-radius: 9999px;
+  background: var(--sun-mid);
+}
+
+.chill-sun-rotor {
+  animation-name: chill-sun-spin;
+  animation-duration: 60s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+@keyframes chill-sun-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.chill-sun-core {
+  left: 50%;
+  top: 50%;
+  width: 90px;
+  height: 90px;
+  margin-left: -45px;
+  margin-top: -45px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 50% 50%, var(--sun-core) 0%, var(--sun-mid) 55%, transparent 78%);
+  animation-name: chill-sun-pulse;
+  animation-duration: 6s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+@keyframes chill-sun-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Freezes the rotation + pulse but leaves the sun fully visible (`animation:
+ * none`, not `display: none`) — a static sun is a landmark, not motion, the
+ * same reasoning the amp-up pass's hero stars/CD-disc-paused states rely on.
+ * Contrast with motes/bubbles/rings/shooting-stars/clouds/plane/beams below,
+ * which are hidden outright: those are pure drift/rise/breathe/streak
+ * animations with no meaningful "frozen" pose, so a paused frame reads as
+ * dirt/smudge rather than decoration — the sun's frozen pose is still
+ * legibly "a sun". */
+@media (prefers-reduced-motion: reduce) {
+  .chill-sun-rotor,
+  .chill-sun-core {
+    animation: none;
+  }
+}
+
+/*
  * Light beams (amp-up pass, LIGHT FOCUS ONLY) — three wide, very-soft-edged
  * translucent bands, "sunlight through a window". Same pre-rotated-container
  * (`.light-beam-rotor`, static inline rotate ~18-25deg) + animated-child
@@ -1705,6 +1958,54 @@ body * {
  * mode does carry `data-level`, so this is the live "beams pause at Level 3,
  * rings keep breathing" behavior the brief asks for. */
 [data-level="3"] .light-beam {
+  animation-play-state: paused;
+}
+
+/*
+ * Light-focus sun-glints ("light needs more" pass, LIGHT FOCUS ONLY —
+ * shell/BackgroundAmbience.tsx's GLINTS array + `.sun-glints-layer`/
+ * `.sun-glint` markup). 14 tiny 4-point sparkles, the daytime counterpart of
+ * the dark starfield above. Gated via the wrapper's `display`, same
+ * hide-by-default-then-show pattern as `.light-beams-layer`/`.paper-clouds-
+ * layer` above — dark and chill are both unaffected (default `display: none`
+ * means an unstyled `<div>` would otherwise render everywhere, which is why
+ * this rule has to exist rather than being purely decorative polish).
+ * Each glint twinkles independently via its own `animation-delay`/
+ * `-duration` (inline per-instance) driving the same shared keyframe —
+ * opacity 0.15->0.7, transform never touched (fill color/contrast math is on
+ * the --glint token above). Paused (not hidden) at Level 3, matching
+ * `.light-beam`'s reasoning immediately above (a light-only bonus layer,
+ * livelier than deep-lock focus wants, but not the shared ring/mote
+ * ambience) — reduced-motion instead hides it outright, alongside
+ * mote/bubble/ring/shooting-star, in that shared `!important` block below.
+ */
+.sun-glints-layer {
+  display: none;
+}
+
+[data-theme="light"][data-mode="focus"] .sun-glints-layer {
+  display: block;
+}
+
+.sun-glint {
+  position: absolute;
+  animation-name: sun-glint-twinkle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: opacity;
+}
+
+@keyframes sun-glint-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+[data-level="3"] .sun-glint {
   animation-play-state: paused;
 }
 
