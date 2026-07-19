@@ -79,7 +79,7 @@ export function MusicPlayer() {
       <div className="flex flex-col items-center gap-1 text-center">
         <h2 className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-muted">Music player</h2>
         <p
-          className="mt-2 max-w-full truncate text-2xl font-bold text-ink sm:text-3xl"
+          className="font-display mt-2 max-w-full truncate text-2xl font-bold leading-snug text-ink sm:text-3xl"
           title={`${current.title} — ${current.artist}`}
         >
           {current.title}

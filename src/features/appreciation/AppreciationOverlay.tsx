@@ -67,7 +67,9 @@ export function AppreciationOverlay() {
       >
         {!reducedMotion && variant.id === 'growing-plant' && <GrowingPlant />}
         {!reducedMotion && variant.id === 'star-pulse' && <StarPulse />}
-        <p className="max-w-xs text-center text-base font-medium text-ink">{variant.message}</p>
+        <p className="font-display max-w-xs text-center text-base font-semibold leading-snug text-ink">
+          {variant.message}
+        </p>
       </div>
     </div>
   )

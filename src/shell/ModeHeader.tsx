@@ -53,7 +53,18 @@ export function ModeHeader() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-ink-muted">
           Chill / Focus
         </p>
-        <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-ink sm:text-[2rem]">
+        <h1
+          className={`font-display mt-1 text-2xl font-bold text-ink sm:text-[2rem] ${
+            /* Baloo 2 is naturally chunky at 600-700 — font-bold (700) plus
+             * normal tracking (dropping the old tight tracking) lets its
+             * round letterforms breathe, and leading-snug (vs. the tighter
+             * default) gives its taller glyphs room so they don't clip.
+             * Space Grotesk wants the opposite treatment: tracking-tight
+             * reads sharper on its squarer, more geometric shapes, and it
+             * sits comfortably at the original tighter leading. */
+            mode === 'chill' ? 'leading-snug tracking-normal' : 'leading-tight tracking-tight'
+          }`}
+        >
           {mode === 'chill' ? 'Chill mode' : 'Focus mode'}
         </h1>
       </div>

@@ -12,6 +12,16 @@ import '@fontsource/quicksand/400.css'
 import '@fontsource/quicksand/500.css'
 import '@fontsource/quicksand/600.css'
 import '@fontsource/quicksand/700.css'
+// Display-font layer (v6 pass) — a distinct, chunkier face reserved for a
+// short list of "personality" spots (wordmark, track title, tile labels,
+// appreciation message, focus phase label) via --display-font/.font-display
+// in styles/index.css. Only the weights those spots actually use are
+// imported, same discipline as Quicksand above.
+import '@fontsource/baloo-2/500.css'
+import '@fontsource/baloo-2/600.css'
+import '@fontsource/baloo-2/700.css'
+import '@fontsource/space-grotesk/500.css'
+import '@fontsource/space-grotesk/700.css'
 import '../styles/index.css'
 import App from './App.tsx'
 

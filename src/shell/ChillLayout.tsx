@@ -123,7 +123,7 @@ function GamesCard() {
                     <GameGlyph id={game.id} />
                   </span>
                   <span className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium text-ink">{game.label}</span>
+                    <span className="font-display text-sm font-semibold text-ink">{game.label}</span>
                     <span className="line-clamp-2 text-xs text-ink-muted">{game.description}</span>
                   </span>
                 </motion.button>

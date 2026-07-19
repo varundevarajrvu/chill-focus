@@ -269,6 +269,36 @@
 }
 
 /*
+ * Display-font layer (v6 pass) — the base-font swap above (Quicksand vs
+ * Inter) reads as too subtle a personality shift on its own, so a second,
+ * chunkier display face is layered on top for a short, deliberate list of
+ * "has personality" spots: the mode wordmark, the chill track title, game
+ * tile labels, the appreciation overlay message, and focus's phase label
+ * ("READY"/"FOCUS"/"BREAK"). Everything else — body text, micro-labels,
+ * numbers, notes/todo/forms/buttons — stays on --app-font untouched; this is
+ * restraint by design, not an oversight.
+ *
+ * Mode-scoped (like --app-font), never theme-scoped: Chill gets Baloo 2 (a
+ * rounder, chunkier companion to Quicksand — same friendly family, more
+ * presence), Focus gets Space Grotesk (a squarer, more geometric companion to
+ * Inter). Both fall back to their mode's own --app-font family first, then
+ * the same system stacks, so a slow display-font load never shows a
+ * mismatched generic sans in the meantime.
+ */
+:root,
+[data-mode="chill"] {
+  --display-font: 'Baloo 2', 'Quicksand', 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+[data-mode="focus"] {
+  --display-font: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-display {
+  font-family: var(--display-font);
+}
+
+/*
  * Explicit Inter pin for numeric displays that live inside chill (where
  * --app-font is Quicksand) — track/game scorelines and duration labels
  * update live, and Quicksand's proportional, non-tabular numerals would

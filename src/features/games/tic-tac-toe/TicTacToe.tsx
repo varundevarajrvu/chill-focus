@@ -98,7 +98,7 @@ export function TicTacToe() {
         })}
       </div>
 
-      <p className="text-sm font-medium text-ink" role="status" aria-live="polite">
+      <p className="font-display text-sm font-semibold text-ink" role="status" aria-live="polite">
         {status}
       </p>
 
