@@ -2,12 +2,14 @@ import { useEffect } from 'react'
 import { useModeStore } from '../stores/modeStore'
 import { useTimerStore } from '../stores/timerStore'
 import { useThemeStore } from '../stores/themeStore'
+import { useIntroStore } from '../stores/introStore'
 import { useTabTitle } from '../hooks/useTabTitle'
 import { AppreciationOverlay } from '../features/appreciation/AppreciationOverlay'
 import { BackgroundAmbience } from './BackgroundAmbience'
 import { FocusScrollCompanion } from './FocusScrollCompanion'
 import { ModeHeader } from './ModeHeader'
 import { ModeStage } from './ModeStage'
+import { Landing } from './Landing'
 // Side-effect import: activates the module-level audio manager's store
 // subscription. Mounted here (not in FocusLayout/AmbientPanel) so ambient
 // audio keeps playing across Chill/Focus mode switches — the manager is
@@ -21,6 +23,7 @@ export function AppShell() {
   const mode = useModeStore((s) => s.mode)
   const level = useTimerStore((s) => s.level)
   const theme = useThemeStore((s) => s.theme)
+  const introSeen = useIntroStore((s) => s.seen)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-mode', mode)
@@ -43,26 +46,37 @@ export function AppShell() {
   useTabTitle()
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-5xl flex-col">
-      <BackgroundAmbience />
-      <FocusScrollCompanion />
-      <ModeHeader />
-      {/* Focus stays vertically centered (its content is a fixed-height hero +
-          rail, shorter than the viewport on most screens). Chill's new
-          scrolling layout is naturally tall/variable-height — centering it
-          would fight the scroll journey (e.g. yank the Games section upward
-          into view before the user scrolls), so chill flows top-down instead.
-          Gated off modeStore rather than a content-height measurement: it's
-          the simplest correct rule given chill/focus are structurally fixed
-          per mode (Section 6), not something to detect at runtime. */}
-      <main
-        className={`flex flex-1 flex-col px-6 py-10 sm:px-10 sm:py-16 ${
-          mode === 'focus' ? 'justify-center' : 'justify-start'
-        }`}
-      >
-        <ModeStage />
-      </main>
-      <AppreciationOverlay />
-    </div>
+    <>
+      {/* Shell content is marked inert while the first-visit intro is open, so
+          nothing behind the overlay (mode switcher, theme toggle, timer, ...)
+          is focusable or in the a11y tree — the intro reads as a true modal.
+          Cleared the moment the visitor picks a mode. */}
+      <div className="mx-auto flex min-h-screen max-w-5xl flex-col" inert={!introSeen}>
+        <BackgroundAmbience />
+        <FocusScrollCompanion />
+        <ModeHeader />
+        {/* Focus stays vertically centered (its content is a fixed-height hero +
+            rail, shorter than the viewport on most screens). Chill's new
+            scrolling layout is naturally tall/variable-height — centering it
+            would fight the scroll journey (e.g. yank the Games section upward
+            into view before the user scrolls), so chill flows top-down instead.
+            Gated off modeStore rather than a content-height measurement: it's
+            the simplest correct rule given chill/focus are structurally fixed
+            per mode (Section 6), not something to detect at runtime. */}
+        <main
+          className={`flex flex-1 flex-col px-6 py-10 sm:px-10 sm:py-16 ${
+            mode === 'focus' ? 'justify-center' : 'justify-start'
+          }`}
+        >
+          <ModeStage />
+        </main>
+        <AppreciationOverlay />
+      </div>
+      {/* First-visit landing overlay (post-spec, Chief-requested). A sibling of
+          the shell (not a child) so it stays interactive while the shell above
+          is inert; self-gates to null once the visitor has picked a mode, so
+          returning visitors never mount it. */}
+      <Landing />
+    </>
   )
 }
