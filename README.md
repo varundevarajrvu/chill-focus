@@ -2,6 +2,8 @@
 
 A two-mode study companion. **Chill mode** is for the breaks — music and mini-games. **Focus mode** is for the work — a leveled pomodoro timer, ambient sound, and a notes/todo panel. Same shell, different soul.
 
+First-time visitors land on a quick pick-your-mode intro; the choice is saved to `localStorage`, so returning visitors drop straight into their last mode and never see it again.
+
 **Live:** https://chill-focus.vercel.app
 
 ## Focus mode
